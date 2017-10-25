@@ -10,7 +10,6 @@ from threading import Event, Lock
 import logging
 import sys
 import json
-import intercom
 import JobManager as JM
 from Job import JobRunner
 
@@ -22,9 +21,9 @@ class ServerContext(object):
     def __init__(self):
         self.node_ref = None
         
-        self.general_queue = Queue() #all tasks submitted here
-        self.job_queue = Queue() #user jobs submitter here
-        self.results_queue = Queue()
+        self.general_queue = Queue(0) #all tasks submitted here
+        self.job_queue = Queue(0) #user jobs submitter here
+        self.results_queue = Queue(0)
         
         self.running_jobs = []
         
@@ -43,6 +42,12 @@ class ServerContext(object):
     def get_node_info(self):
         node_dictionary = self.node_ref.convert_to_dictionary()
         return json.dumps(node_dictionary)
+    
+    def get_node_counts(self):
+        num_cores = self.node_ref.jobManager.num_processors
+        num_running = len(self.node_ref.jobManager.running_job_dictionary)
+        dictionary = {'num_cores':num_cores, 'num_running': num_running}
+        return json.dumps( dictionary )
         
     def add_general_element(self, general_element):
         self.logger.debug('adding a general element')

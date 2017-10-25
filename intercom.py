@@ -7,7 +7,6 @@ Created on Sat Sep 23 18:37:52 2017
 """
 import requests 
 import json
-from Messaging import Message
 
 
 def get_request(location):

@@ -10,7 +10,6 @@ import logging
 import sys
 from flask import Flask, jsonify, request
 from ServerContext import ServerContext, ElementTypes
-from Messaging import Message
 import json
 
 app = Flask(__name__)
@@ -36,6 +35,11 @@ def add_slave_node():
     sc.add_general_element({'type': ElementTypes.slave_node_recv,
                             'json_data': json_data})
     return 'slave noded added'
+
+@app.route('/nodeCounts', methods=['GET'])
+def node_counts():
+    data = sc.get_node_counts()
+    return data
     
 @app.route('/nodeInfo', methods=['GET'])
 def node_info():

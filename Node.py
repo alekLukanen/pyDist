@@ -61,13 +61,15 @@ import logging
 import sys
 import threading
 import multiprocessing
+from queue import Queue
         
 #my libs
 import RESTEndpoints
 from ServerContext import ElementTypes
-from Job import JobRunner, BaseJob, JobServer
+from Job import JobRunner, BaseJob
 from JobManager import JobManager
 import intercom
+import NodeInterface
 
 
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -80,6 +82,11 @@ class Node(BaseNode):
         self.num_cores = multiprocessing.cpu_count()
         
         self.jobManager = JobManager()
+        
+        self.result_queue = Queue(0)
+        self.job_queue = Queue(0)
+        
+        self.interfaces_lock = threading.Lock()
         self.interfaces = []
         
         #create and run the RESTEnpoints module in another thread
@@ -114,27 +121,10 @@ class Node(BaseNode):
         #general info thread
         self.general_thread = threading.Thread(target=self.general_processor)
         self.general_thread.start()
-        #message thread
-        self.message_thread = threading.Thread(target=self.message_processor)
-        self.message_thread.start()
-        #job thread (new incoming jobs)
+        #job thread (new incoming jobs or finished jobs)
         self.job_thread = threading.Thread(target=self.job_processor)
         self.job_thread.start()
-        
-        self.result_thread = threading.Thread(target=self.result_processor)
-        self.result_thread.start()
-
-    def result_processor(self):
-        self.logger.debug('in the result processor thread')
-        while (True):
-            result = self.get_server_context().processor.get_result() #a new result for the master node
-            job_for_server = JobServer()
-            job_for_server.job_from_dictionary(result.convert_to_dictionary())
-            job_for_server.finished = True
-            intercom.post_job(job_for_server.root_node.ip
-                              , job_for_server.root_node.port, job_for_server)
             
-
     #START HERE
     ####
     ###
@@ -144,31 +134,18 @@ class Node(BaseNode):
         self.logger.debug('in the job processor thread')
         while (True):
             sc = self.get_server_context()
-            job_element = self.request_job_elements().get()
+            job_element = sc.job_queue.get()
             #the job submitted by the user
-            job = JobServer()
+            job = BaseJob()
             job.job_from_dictionary(job_element)
             
-            is_finished = sc.process_job(job)
-            if (is_finished):
-                sent = sc.send_job_to_a_client(job) #T/F
-                if (sent):
-                    sc.processed_jobs[self.job_id_tick] = job
-                    self.increment_job_id_tick()
-                else:
-                    sc.add_pending_job(job)
-        
-    def message_processor(self):
-        self.logger.debug('in the message processor thread')
-        while (True):
-            sc = self.get_server_context()
-            message_element = self.request_message_elements().get()
-            #do something with message here
-            #
-            #
-            
-            sc.acquire_past_messages().append(message_element)
-            self.logger.debug("message added: %s" % message_element)
+            if (job.finished==True):
+                #add as a result
+                self.result_queue.put(job)
+                continue
+            else:
+                #add as a job
+                self.job_queue.put(job)
             
         
     def general_processor(self):
@@ -178,28 +155,22 @@ class Node(BaseNode):
             general_element = self.request_general_elements().get()
             
             if (general_element['type']==ElementTypes.slave_node_recv):
-                self.logger.debug('adding a slave node to the node')
+                self.logger.debug('adding a JobInterface to the node')
                 
-                slave_node_data = general_element['json_data']
-                slave_node = Node()
-                slave_node.BaseNode_from_dictionary(slave_node_data)
-                sc.add_slave_node(self.id_tick, slave_node)
+                node_data = general_element['json_data']
+                node_interface = NodeInterface.NodeInterface()
                 
-                #connect back to the client to tell them that they have been
-                #added as a client. This also servers as info pass to the client
-                #so they know where the master node is in the future.
-                intercom.connect_as_master(slave_node.ip, slave_node.port, self)
-                self.increment_id_tick()
+                #update the nodes counts. This means that the node
+                #is up to date.
+                node_interface.NodeInterface_from_dictionary(node_data) #only need ip and port
+                node_interface.update_variables()
                 
-            elif (general_element['type']==ElementTypes.master_node_recv):
-                self.logger.debug('adding a master node to the node')
+                #update the interfaces list
+                self.interfaces_lock.acquire()
+                self.interfaces.append(node_interface)
+                self.interfaces_lock.release()
                 
-                master_node_data = general_element['json_data']
-                node_id = self.id_tick
-                master_node = Node()
-                master_node.BaseNode_from_dictionary(master_node_data)
-                sc.acquire_masters()[node_id] = master_node
-                self.increment_id_tick()
+                self.logger.debug('(IFL) interfaces: %s' % self.interfaces)
                 
             else:
                 self.logger.debug('ElementTypes does not contain: %s' % general_element)
