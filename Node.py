@@ -66,7 +66,7 @@ from queue import Queue
 #my libs
 import RESTEndpoints
 from ServerContext import ElementTypes
-from Job import JobRunner, BaseJob
+import Job
 from JobManager import JobManager
 import intercom
 import NodeInterface
@@ -86,6 +86,9 @@ class Node(BaseNode):
         self.result_queue = Queue(0)
         self.job_queue = Queue(0)
         
+        self.result_added = threading.Event()
+        self.result_added.clear()
+        
         self.interfaces_lock = threading.Lock()
         self.interfaces = []
         
@@ -94,6 +97,8 @@ class Node(BaseNode):
         self.general_thread = None
         self.message_thread = None
         self.job_thread = None
+        self.job_runner_thread = None
+        self.job_manager_thread = None
         
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)s - %(funcName)20s() ] - %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
@@ -113,7 +118,8 @@ class Node(BaseNode):
             print ("could not connect to that host, trying again")
         else:
             print ("connected to the host")
-        
+    
+    #start the rest endpoints and the processor threads.    
     def create_server(self):
         #rest server thread
         self.REST_thread = threading.Thread(target=RESTEndpoints.boot,args=(self.ip,self.port,self,))
@@ -124,34 +130,90 @@ class Node(BaseNode):
         #job thread (new incoming jobs or finished jobs)
         self.job_thread = threading.Thread(target=self.job_processor)
         self.job_thread.start()
+        #create runner thread
+        self.job_runner_thread = threading.Thread(target=self.job_runner)
+        self.job_runner_thread.start()
+        #job manager thread
+        self.job_manager_thread = threading.Thread(target=self.job_manager_processor)
+        self.job_manager_thread.start()
+        
+    def update_NodeInt_counts(self):
+        self.interfaces_lock.acquire()
+        for NodeInt in self.interfaces:
+            NodeInt.update_variables()
+        self.interfaces_lock.release()
+    
+    #with the jobs in the job_queue send the jobs to the various
+    #job managers/Node interfaces.        
+    def job_runner(self):
+        previous_job = None
+        while(True):
+            if (previous_job==None):
+                job = self.job_queue.get()
+            else:
+                job = previous_job
             
-    #START HERE
-    ####
-    ###
-    ##
-    #
+            job_placed = False
+            if (len(self.jobManager.running_job_dictionary)+self.jobManager.job_q_count<self.jobManager.num_processors):
+                #(1) look for a spot on this node
+                self.logger.debug('added job to this node (running: %s, cores: %s)' 
+                                  % (len(self.jobManager.running_job_dictionary)+self.jobManager.job_q_count, self.jobManager.num_processors))
+                self.jobManager.add_job(Job.convertBaseToRunner(job))
+                job_placed = True
+            else:
+                #(2) look for a spot on other nodes
+                self.update_NodeInt_counts() #update the counts first
+                job
+                self.interfaces_lock.acquire()
+                for NodeInt in self.interfaces:
+                    if (NodeInt.num_running<NodeInt.num_cores):#run the process if true
+                        self.logger.debug('added job to a NodeInterface...')
+                        job = self.job_queue.get()
+                        NodeInt.add_job(job)
+                        job_placed = True
+                        break
+                self.interfaces_lock.release()
+                
+            #chekc if job found a home
+            if (job_placed==False):
+                previous_job = job
+                self.logger.debug('waiting for a result to come in')
+                self.result_added.wait()
+                self.result_added.clear()
+            else:
+                previous_job = None
+                continue   
+            
+    #move the results to the nodes queue
+    def job_manager_processor(self):
+        while (True):
+            self.result_queue.put(self.jobManager.get_result())
+            self.result_added.set()
+            
+    #process the jobs commming into the node
     def job_processor(self):
         self.logger.debug('in the job processor thread')
         while (True):
             sc = self.get_server_context()
             job_element = sc.job_queue.get()
             #the job submitted by the user
-            job = BaseJob()
+            job = Job.BaseJob()
             job.job_from_dictionary(job_element)
             
             if (job.finished==True):
                 #add as a result
                 self.result_queue.put(job)
+                self.result_added.set()
                 continue
             else:
                 #add as a job
-                self.job_queue.put(job)
+                self.add_job(job)
             
-        
+    
+    #process things such as node interfaces and messages    
     def general_processor(self):
         self.logger.debug('in the processor thread')
         while(True):
-            sc = self.get_server_context()
             general_element = self.request_general_elements().get()
             
             if (general_element['type']==ElementTypes.slave_node_recv):
@@ -176,7 +238,12 @@ class Node(BaseNode):
                 self.logger.debug('ElementTypes does not contain: %s' % general_element)
                 
     
-   
+    def add_job(self, job):
+        self.job_queue.put(job)
+        
+    def get_result(self):
+        return self.result_queue.get()
+    
     def close_node(self):
         self.logger.debug('closing the node')
         self.request_close_server()
@@ -188,18 +255,9 @@ class Node(BaseNode):
         
     def get_server_context(self):
         return RESTEndpoints.sc
-        
-    def request_slave_nodes(self):
-        return self.get_server_context().slave_node_queue
-    
-    def request_master_nodes(self):
-        return self.get_server_context().master_node_queue
     
     def request_general_elements(self):
         return self.get_server_context().general_queue
-    
-    def request_message_elements(self):
-        return self.get_server_context().message_queue
     
     def request_job_elements(self):
         return self.get_server_context().job_queue

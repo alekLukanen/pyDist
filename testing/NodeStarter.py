@@ -11,13 +11,17 @@ sys.path.append('../')
 from Node import Node
 import time
 
-node = Node()
-node.boot('0.0.0.0',9001) #need to wait 1 second for the flask app to boot...
-node.connect('0.0.0.0',9000)
+def start_single_node(server_ip='0.0.0.0', server_port=9000, client_ip='0.0.0.0', client_port=9001):
+    node = Node()
+    node.boot(client_ip,client_port) #need to wait 1 second for the flask app to boot...
+    node.connect(server_ip,server_port)
+    return node
 
+#connect two nodes to the server at 9000
+def start_two_nodes(server_ip='0.0.0.0', server_port=9000, client_ip='0.0.0.0'):
+    node = start_single_node('0.0.0.0', 9000, '0.0.0.0', 9001)
+    node2 = start_single_node('0.0.0.0', 9000, '0.0.0.0', 9002)
 
-node2 = Node()
-node2.boot('0.0.0.0',9002) #need to wait 1 second for the flask app to boot...
-node2.connect('0.0.0.0',9000)
-
-
+if __name__ == '__main__':
+    #start_two_nodes()
+    node = start_single_node()

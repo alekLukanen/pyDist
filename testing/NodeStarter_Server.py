@@ -11,31 +11,30 @@ sys.path.append('../')
 from Node import Node
 from Job import BaseJob
 import time
+import testerHelpers
 
-node = Node()
-node.boot('0.0.0.0',9000)
+def start_head_node(server_ip='0.0.0.0', server_port=9000):
+    node = Node()
+    node.boot(server_ip,server_port)
+    return node
 
-#time.sleep(1)
-#testerHelpers.print_break()
-#input("Waiting for you")
-#testerHelpers.print_break()
-'''
-job = JobServer()
-job.file_name = "exSheet"
-job.function_name = "estimatePi"
-job.arguements = (10000,)
-job.num_instances = 1
+def add_jobs_to_node(node):
+    job = BaseJob()
+    job.file_name = "exSheet"
+    job.function_name = "estimatePi"
+    job.arguements = (100000,)
+    job.num_instances = 1
+    for _ in range(0,16):
+        node.add_job(job)
+    
+    count = 0
+    while(True):
+        result = node.get_result()
+        print ('(%d) value of pi: %s' %  (count, result.return_value))
+        count+=1
 
-job.root_node = BaseJob()
-for _ in range(0,16):
-    node.send_job(job)
-
-testerHelpers.node_info(node)
-
-results = node.get_server_context().results_queue
-count = 0
-while(True):
-    result = results.get()
-    print ('(%d) value of pi: %s' %  (count, result.return_value))
-    count+=1
-'''
+if __name__ == '__main__':
+    node = start_head_node()
+    testerHelpers.wait_for_user()
+    add_jobs_to_node(node)
+    
