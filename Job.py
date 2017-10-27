@@ -57,7 +57,7 @@ class BaseJob(object):
         self.file_name = data['file_name'] if 'file_name' in data else ''
         self.num_instances = data['num_instances'] if 'num_instances' in data else 0
         self.from_ip = data['from_ip'] if 'from_ip' in data else None
-        self.from_ip = data['from_port'] if 'from_port' in data else None
+        self.from_port = data['from_port'] if 'from_port' in data else None
         self.data = pickleFunctions.unPickle(data['data'].encode()) if 'data' in data else ''
         self.job_id = data['job_id'] if 'job_id' in data else ''
         self.function_name = data['function_name'] if 'function_name' in data else ''
@@ -97,7 +97,7 @@ class JobRunner(BaseJob):
         self.file_name = data['file_name'] if 'file_name' in data else ''
         self.num_instances = data['num_instances'] if 'num_instances' in data else 0
         self.from_ip = data['from_ip'] if 'from_ip' in data else None
-        self.from_ip = data['from_port'] if 'from_port' in data else None
+        self.from_port = data['from_port'] if 'from_port' in data else None
         self.data = pickleFunctions.unPickle(data['data'].encode()) if 'data' in data else ''
         self.job_id = data['job_id'] if 'job_id' in data else ''
         self.function_name = data['function_name'] if 'function_name' in data else ''

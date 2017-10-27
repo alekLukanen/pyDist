@@ -176,6 +176,9 @@ class Node(BaseNode):
                 for NodeInt in self.interfaces:
                     if (NodeInt.num_running<NodeInt.num_cores):#run the process if true
                         self.logger.debug('(JOB>>>) added job to a NodeInterface...')
+                        self.logger.debug('ip: %s, port: %d' % (self.ip, self.port))
+                        job.from_ip = self.ip
+                        job.from_port = self.port
                         NodeInt.add_job(job)
                         job_placed = True
                         break
@@ -194,8 +197,14 @@ class Node(BaseNode):
     #move the results to the nodes queue
     def job_manager_processor(self):
         while (True):
-            self.result_queue.put(self.jobManager.get_result())
-            self.logger.debug('got job from jobManager')
+            job = self.jobManager.get_result()
+            if (job.from_ip==None and job.from_port==None):
+                self.logger.debug('added job to result_queue')
+                self.result_queue.put(job)
+            else:
+                self.logger.debug('added job to head node')
+                job.finished = True
+                intercom.post_job(job.from_ip, job.from_port, job)
             self.result_added.set()
             
     #process the jobs commming into the node
