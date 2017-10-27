@@ -54,8 +54,7 @@ class JobManager(object):
         self.job_catcher.start()
         
     def set_num_processors(self, n):
-        self.num_processors = n
-        
+        self.num_processors = n   
     
     def wait_for_all_results(self):
         print ('waiting for all of the result to come in')
@@ -85,7 +84,7 @@ class JobManager(object):
     def job_catcher(self):
         while(True):
             job_return = self.done_q.get()
-            #print ('---> job_manaer_id', job_return.job_manager_id)
+            print ('---> job_manaer_id', job_return.job_manager_id)
             
             #shutdown the process
             self.running_job_dictionary_lock.acquire()
@@ -94,8 +93,11 @@ class JobManager(object):
             except:
                 print ('lost one: %d' % job_return.job_manager_id)
             self.running_job_dictionary_lock.release()
-            ref_job.processor.join()
-            ref_job.processor.terminate()
+            try:
+                ref_job.processor.join()
+                ref_job.processor.terminate()
+            except:
+                print ('<---> job not started')
             ref_job.processor = None
             
             self.job_completed.set()
@@ -181,13 +183,13 @@ if __name__ == '__main__':
     #jobM.set_num_processors(4)
     
     n = 1
-    N = 100
+    N = 200
     start_time = time.time()
     for i in range(0,N):
         ex_job = JobRunner()
         ex_job.file_name = "exSheet"
-        ex_job.function_name = "estimatePi"
-        ex_job.arguements = (n,)
+        ex_job.function_name = "printArg"
+        ex_job.arguements = (n,n,n)
         jobM.add_job(ex_job)
         
     num_found = 0
@@ -198,6 +200,9 @@ if __name__ == '__main__':
             break
         else:
             num_found+=1
+            
+        if (num_found==N):
+            break
             
     print ('num_found: %d' % num_found)
     jobM.wait_for_all_results()

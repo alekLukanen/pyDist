@@ -5,7 +5,7 @@ Created on Tue Dec 20 17:48:28 2016
 @author: alek
 """
 
-import numpy as np
+#import numpy as np
 import time as tm
 import pickle
 import importlib
@@ -18,8 +18,8 @@ def printPi():
     
 def printArg(arg0,arg1,arg2):
     answer = arg0+arg1+arg2
-    print ('- answer: ', answer)
-    tm.sleep(arg0)
+    #print ('- answer: ', answer)
+    #tm.sleep(0.001)
     return (arg0,arg1,arg2,answer)    
     
 def estimatePi(n):
