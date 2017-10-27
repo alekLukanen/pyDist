@@ -49,7 +49,6 @@ class NodeInterface(object):
         location = location_assembler(self.ip, self.port, "/nodeCounts")
         response = get_request(location)
         response = parse_response(response)
-        print (response)
         self.num_cores = response["num_cores"] if "num_cores" in response else 1
         self.num_running = response["num_running"] if "num_running" in response else 0
         

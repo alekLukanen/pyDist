@@ -24,14 +24,15 @@ def add_jobs_to_node(node):
     job.function_name = "estimatePi"
     job.arguements = (100000,)
     job.num_instances = 1
-    for _ in range(0,16):
+    for _ in range(0,5):
         node.add_job(job)
-    
+    '''
     count = 0
     while(True):
         result = node.get_result()
         print ('(%d) value of pi: %s' %  (count, result.return_value))
         count+=1
+    '''
 
 if __name__ == '__main__':
     node = start_head_node()

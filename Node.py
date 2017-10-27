@@ -146,19 +146,27 @@ class Node(BaseNode):
     #with the jobs in the job_queue send the jobs to the various
     #job managers/Node interfaces.        
     def job_runner(self):
+        self.logger.debug('in the job runner thread')
         previous_job = None
+        num_jobs_dequed = 0
         while(True):
+            
             if (previous_job==None):
+                self.logger.debug('(QUEUE %d) getting job from queue' % num_jobs_dequed)
                 job = self.job_queue.get()
+                num_jobs_dequed+=1
             else:
                 job = previous_job
+                
+            #self.logger.debug('this node (running: %s, cores: %s)' 
+            #                 % (len(self.jobManager.running_job_dictionary)+self.jobManager.job_q_count
+            #                    , self.jobManager.num_processors))
             
             job_placed = False
             if (len(self.jobManager.running_job_dictionary)+self.jobManager.job_q_count<self.jobManager.num_processors):
                 #(1) look for a spot on this node
-                self.logger.debug('added job to this node (running: %s, cores: %s)' 
-                                  % (len(self.jobManager.running_job_dictionary)+self.jobManager.job_q_count, self.jobManager.num_processors))
                 self.jobManager.add_job(Job.convertBaseToRunner(job))
+                self.logger.debug('(JOB>>>) adding job to this node')
                 job_placed = True
             else:
                 #(2) look for a spot on other nodes
@@ -167,8 +175,7 @@ class Node(BaseNode):
                 self.interfaces_lock.acquire()
                 for NodeInt in self.interfaces:
                     if (NodeInt.num_running<NodeInt.num_cores):#run the process if true
-                        self.logger.debug('added job to a NodeInterface...')
-                        job = self.job_queue.get()
+                        self.logger.debug('(JOB>>>) added job to a NodeInterface...')
                         NodeInt.add_job(job)
                         job_placed = True
                         break
@@ -177,7 +184,7 @@ class Node(BaseNode):
             #chekc if job found a home
             if (job_placed==False):
                 previous_job = job
-                self.logger.debug('waiting for a result to come in')
+                self.logger.debug('(WAITING) waiting for a result to come in')
                 self.result_added.wait()
                 self.result_added.clear()
             else:
@@ -188,6 +195,7 @@ class Node(BaseNode):
     def job_manager_processor(self):
         while (True):
             self.result_queue.put(self.jobManager.get_result())
+            self.logger.debug('got job from jobManager')
             self.result_added.set()
             
     #process the jobs commming into the node
@@ -202,11 +210,13 @@ class Node(BaseNode):
             
             if (job.finished==True):
                 #add as a result
+                self.logger.debug('(result_queue<<<JOB PROC) got job')
                 self.result_queue.put(job)
                 self.result_added.set()
                 continue
             else:
                 #add as a job
+                self.logger.debug('(job_queue<<<JOB PROC) got job')
                 self.add_job(job)
             
     

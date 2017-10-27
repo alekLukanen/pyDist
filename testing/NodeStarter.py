@@ -21,6 +21,7 @@ def start_single_node(server_ip='0.0.0.0', server_port=9000, client_ip='0.0.0.0'
 def start_two_nodes(server_ip='0.0.0.0', server_port=9000, client_ip='0.0.0.0'):
     node = start_single_node('0.0.0.0', 9000, '0.0.0.0', 9001)
     node2 = start_single_node('0.0.0.0', 9000, '0.0.0.0', 9002)
+    return node, node2
 
 if __name__ == '__main__':
     #start_two_nodes()
