@@ -32,6 +32,9 @@ class ServerContext(object):
         self.credentials_lock = Lock()
         self.past_messages_lock = Lock()
         
+        self.server_ended_event = Event()
+        self.server_ended_event.clear()
+        
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)s - %(funcName)20s() ] - %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
         self.logger = logging.getLogger()

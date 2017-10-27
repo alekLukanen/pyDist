@@ -44,6 +44,8 @@ class NodeInterface(object):
         self.port = 9000
         self.num_cores = 1
         self.num_running = 0 
+        self.jobs_sent = []
+        
         
     def update_variables(self):
         location = location_assembler(self.ip, self.port, "/nodeCounts")
@@ -56,7 +58,11 @@ class NodeInterface(object):
         job_data = job.convert_to_dictionary()
         location = location_assembler(self.ip, self.port, "/addJob")
         response = post_request(location, job_data)
-        return parse_response(response)
+        if (parse_response(response)=='job added'):
+            self.jobs_sent.append(job)
+            return True
+        else:
+            return False
     
     def get_num_cores(self):
         return self.num_cores

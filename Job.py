@@ -64,7 +64,10 @@ class BaseJob(object):
         self.arguements = data['arguements'] if 'arguements' in data else ()
         self.return_value = data['return_value'] if 'return_value' in data else ''
         self.finished = data['finished'] if 'finished' in data else False
-        
+     
+    def __str__(self):
+        return ("<job_id:%s, file_name:%s, function_name:%s, len(arguements):%d>" 
+            % (self.job_id,self.file_name, self.function_name, len(self.arguements)))
         
 class JobRunner(BaseJob):
     

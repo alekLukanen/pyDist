@@ -157,10 +157,6 @@ class Node(BaseNode):
                 num_jobs_dequed+=1
             else:
                 job = previous_job
-                
-            #self.logger.debug('this node (running: %s, cores: %s)' 
-            #                 % (len(self.jobManager.running_job_dictionary)+self.jobManager.job_q_count
-            #                    , self.jobManager.num_processors))
             
             job_placed = False
             if (len(self.jobManager.running_job_dictionary)+self.jobManager.job_q_count<self.jobManager.num_processors):
@@ -179,9 +175,12 @@ class Node(BaseNode):
                         self.logger.debug('ip: %s, port: %d' % (self.ip, self.port))
                         job.from_ip = self.ip
                         job.from_port = self.port
-                        NodeInt.add_job(job)
-                        job_placed = True
-                        break
+                        job_added = NodeInt.add_job(job)
+                        if (job_added==True):
+                            job_placed = True
+                            break
+                        else:
+                            continue
                 self.interfaces_lock.release()
                 
             #chekc if job found a home

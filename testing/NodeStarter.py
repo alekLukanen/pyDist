@@ -29,5 +29,5 @@ def start_two_nodes(server_ip='0.0.0.0'
     return node, node2
 
 if __name__ == '__main__':
-    #start_two_nodes()
+    #one node
     node = start_single_node()
