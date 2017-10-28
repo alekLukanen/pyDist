@@ -11,6 +11,7 @@ import threading
 import time
 import importlib
 from Job import JobRunner
+from sys import exit
 
 class JobManager(object):
     
@@ -86,24 +87,24 @@ class JobManager(object):
     def job_catcher(self):
         while(True):
             job_return = self.done_q.get()
-            #print ('---> job_manaer_id', job_return.job_manager_id)
+            print ('---> job_manaer_id', job_return.job_manager_id)
             
             #shutdown the process
             self.running_job_dictionary_lock.acquire()
             try:
                 ref_job = self.running_job_dictionary.pop(job_return.job_manager_id)
             except:
-                pass
-                #print ('lost one: %d' % job_return.job_manager_id)
+                #pass
+                print ('lost one: %d' % job_return.job_manager_id)
             self.running_job_dictionary_lock.release()
-            try:
-                ref_job.processor.join()
-                ref_job.processor.terminate()
-            except:
-                pass
+            #try:
+                #ref_job.processor.join()
+                #print ('joined')
+                #ref_job.processor.terminate()
+            #except:
+                #pass
                 #print ('<---> job not started')
             ref_job.processor = None
-            
             self.job_completed.set()
             
             #add the result to the result_q
@@ -118,7 +119,6 @@ class JobManager(object):
                 and self.result_q_count==self.job_tick):
                 self.all_done.set()
             self.running_job_dictionary_lock.release()
-            
         
     def job_runner(self):
         while(True):
@@ -137,7 +137,7 @@ class JobManager(object):
                 
                 self.running_job_dictionary_lock.acquire()
                 self.running_job_dictionary[job.job_manager_id] = job
-                self.running_job_dictionary_lock.release()
+                #self.running_job_dictionary_lock.release()
                 
                 #start the processor...
                 #need to start after adding to dictionary
@@ -145,7 +145,7 @@ class JobManager(object):
                                    , args=(job,))
                 job.processor = p
                 job.processor.start()
-                
+                self.running_job_dictionary_lock.release()
             else:
                 self.job_completed.wait()
                 self.job_completed.clear()
@@ -175,40 +175,45 @@ class JobManager(object):
             job.return_value = func()
             job.processor = None
             self.done_q.put(job)
+            exit(0)
         else:
             job.return_value = func(*job.arguements)
             job.processor = None
             self.done_q.put(job)
+            exit(0)
             
         
 if __name__ == '__main__':
     print ('starting the job manager')
     jobM = JobManager()
-    #jobM.set_num_processors(4)
+    jobM.set_num_processors(8)
     
-    n = 1
+    n = 10000000
     N = 1000
     start_time = time.time()
     for i in range(0,N):
         ex_job = JobRunner()
         ex_job.file_name = "exSheet"
-        ex_job.function_name = "printArg"
-        ex_job.arguements = (n,n,n)
+        ex_job.function_name = "call_ep"
+        ex_job.arguements = (n,)
         jobM.add_job(ex_job)
         
     num_found = 0
+    average = 0.0
     while(True):
         #if (jobM.check_all_done() and jobM.job_tick==jobM.)
         result = jobM.get_result()
         if (result==None):
             break
         else:
+            average+=result.return_value
             num_found+=1
             
         if (num_found==N):
             break
             
     print ('num_found: %d' % num_found)
+    print ('average value: ', average/N)
     jobM.wait_for_all_results()
     print (jobM.check_all_done())
     print ('the program has finished: ', time.time()-start_time)

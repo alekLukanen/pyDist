@@ -10,6 +10,7 @@ import time as tm
 import pickle
 import importlib
 from tempfile import TemporaryFile
+from numba import jit
 
 def printPi():
     print ('-* this is py: ', np.pi)
@@ -22,6 +23,7 @@ def printArg(arg0,arg1,arg2):
     #tm.sleep(0.001)
     return (arg0,arg1,arg2,answer)    
     
+@jit
 def estimatePi(n):
     inside=0
     np.random.seed()
@@ -32,6 +34,9 @@ def estimatePi(n):
             inside += 1
     pi = 4.0 * inside / n
     return pi
+
+def call_ep(n):
+    return estimatePi(n)
     
 def pickleObj(fileName,job,data):
     with open(fileName,'w') as f:
