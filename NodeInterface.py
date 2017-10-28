@@ -8,6 +8,11 @@ Created on Wed Oct 25 16:03:08 2017
 
 import json
 import requests
+import logging
+
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("flask").setLevel(logging.WARNING)
+logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 def get_request(location):
     try:

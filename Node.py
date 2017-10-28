@@ -75,6 +75,7 @@ import NodeInterface
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("flask").setLevel(logging.WARNING)
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 class Node(BaseNode):
     
     def __init__(self):
@@ -152,7 +153,7 @@ class Node(BaseNode):
         while(True):
             
             if (previous_job==None):
-                self.logger.debug('(QUEUE %d) getting job from queue' % num_jobs_dequed)
+                #self.logger.debug('(QUEUE %d) getting job from queue' % num_jobs_dequed)
                 job = self.job_queue.get()
                 num_jobs_dequed+=1
             else:
@@ -162,7 +163,7 @@ class Node(BaseNode):
             if (len(self.jobManager.running_job_dictionary)+self.jobManager.job_q_count<self.jobManager.num_processors):
                 #(1) look for a spot on this node
                 self.jobManager.add_job(Job.convertBaseToRunner(job))
-                self.logger.debug('(JOB>>>) adding job to this node')
+                self.logger.debug('(JOB>>>HEAD) adding job to this node')
                 job_placed = True
             else:
                 #(2) look for a spot on other nodes
@@ -171,8 +172,8 @@ class Node(BaseNode):
                 self.interfaces_lock.acquire()
                 for NodeInt in self.interfaces:
                     if (NodeInt.num_running<NodeInt.num_cores):#run the process if true
-                        self.logger.debug('(JOB>>>) added job to a NodeInterface...')
-                        self.logger.debug('ip: %s, port: %d' % (self.ip, self.port))
+                        self.logger.debug('(JOB>>>WORKER) ip: %s, port: %d'
+                                          % (NodeInt.ip, NodeInt.port))
                         job.from_ip = self.ip
                         job.from_port = self.port
                         job_added = NodeInt.add_job(job)
@@ -186,7 +187,7 @@ class Node(BaseNode):
             #chekc if job found a home
             if (job_placed==False):
                 previous_job = job
-                self.logger.debug('(WAITING) waiting for a result to come in')
+                #self.logger.debug('(WAITING) waiting for a result to come in')
                 self.result_added.wait()
                 self.result_added.clear()
             else:
@@ -198,10 +199,10 @@ class Node(BaseNode):
         while (True):
             job = self.jobManager.get_result()
             if (job.from_ip==None and job.from_port==None):
-                self.logger.debug('added job to result_queue')
+                #self.logger.debug('added job to result_queue')
                 self.result_queue.put(job)
             else:
-                self.logger.debug('added job to head node')
+                #self.logger.debug('added job to head node')
                 job.finished = True
                 intercom.post_job(job.from_ip, job.from_port, job)
             self.result_added.set()
@@ -218,13 +219,13 @@ class Node(BaseNode):
             
             if (job.finished==True):
                 #add as a result
-                self.logger.debug('(result_queue<<<JOB PROC) got job')
+                #self.logger.debug('(result_queue<<<JOB PROC) got job')
                 self.result_queue.put(job)
                 self.result_added.set()
                 continue
             else:
                 #add as a job
-                self.logger.debug('(job_queue<<<JOB PROC) got job')
+                #self.logger.debug('(job_queue<<<JOB PROC) got job')
                 self.add_job(job)
             
     
@@ -235,7 +236,6 @@ class Node(BaseNode):
             general_element = self.request_general_elements().get()
             
             if (general_element['type']==ElementTypes.slave_node_recv):
-                self.logger.debug('adding a JobInterface to the node')
                 
                 node_data = general_element['json_data']
                 node_interface = NodeInterface.NodeInterface()
@@ -250,7 +250,10 @@ class Node(BaseNode):
                 self.interfaces.append(node_interface)
                 self.interfaces_lock.release()
                 
-                self.logger.debug('(IFL) interfaces: %s' % self.interfaces)
+                self.logger.debug('(HEAD<<<NODE INTERFACE) ip: %s, port: %d'
+                                  % (node_interface.ip,node_interface.port))
+                
+                #self.logger.debug('(IFL) interfaces: %s' % self.interfaces)
                 
             else:
                 self.logger.debug('ElementTypes does not contain: %s' % general_element)

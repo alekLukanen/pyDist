@@ -86,20 +86,22 @@ class JobManager(object):
     def job_catcher(self):
         while(True):
             job_return = self.done_q.get()
-            print ('---> job_manaer_id', job_return.job_manager_id)
+            #print ('---> job_manaer_id', job_return.job_manager_id)
             
             #shutdown the process
             self.running_job_dictionary_lock.acquire()
             try:
                 ref_job = self.running_job_dictionary.pop(job_return.job_manager_id)
             except:
-                print ('lost one: %d' % job_return.job_manager_id)
+                pass
+                #print ('lost one: %d' % job_return.job_manager_id)
             self.running_job_dictionary_lock.release()
             try:
                 ref_job.processor.join()
                 ref_job.processor.terminate()
             except:
-                print ('<---> job not started')
+                pass
+                #print ('<---> job not started')
             ref_job.processor = None
             
             self.job_completed.set()
