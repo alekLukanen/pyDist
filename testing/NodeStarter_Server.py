@@ -37,7 +37,7 @@ def add_jobs_to_node(node, count):
     while(True):
         result = node.get_result()
         total_value+=result.return_value
-        #print ('(%d) value of pi: %s' %  (total, result.return_value))
+        print ('(%d) value of pi: %s' %  (total, result.return_value))
         if (total==count-1):
             break
         total+=1
@@ -46,7 +46,7 @@ def add_jobs_to_node(node, count):
     
 
 if __name__ == '__main__':
-    node = start_head_node()
+    node = start_head_node(server_ip='192.168.0.15', server_port=9000)
     testerHelpers.wait_for_user()
     add_jobs_to_node(node, 50)
     node.request_close_server()
