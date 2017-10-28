@@ -87,7 +87,7 @@ class JobManager(object):
     def job_catcher(self):
         while(True):
             job_return = self.done_q.get()
-            print ('---> job_manaer_id', job_return.job_manager_id)
+            #print ('---> job_manaer_id', job_return.job_manager_id)
             
             #shutdown the process
             self.running_job_dictionary_lock.acquire()
