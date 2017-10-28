@@ -49,11 +49,11 @@ class JobManager(object):
         
         self.job_runner = threading.Thread(name='job_runner_thread', target=self.job_runner)
         self.job_runner.daemon = True
-	self.job_runner.start()
+        self.job_runner.start()
         
         self.job_catcher = threading.Thread(name='job_catcher_thread', target=self.job_catcher)
         self.job_catcher.daemon = True
-	self.job_catcher.start()
+        self.job_catcher.start()
         
     def set_num_processors(self, n):
         self.num_processors = n   

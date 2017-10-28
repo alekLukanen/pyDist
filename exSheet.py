@@ -5,7 +5,7 @@ Created on Tue Dec 20 17:48:28 2016
 @author: alek
 """
 
-#import numpy as np
+import numpy as np
 import time as tm
 import pickle
 import importlib
