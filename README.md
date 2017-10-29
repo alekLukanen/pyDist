@@ -6,3 +6,6 @@ This code was developed to make parallel python code easier
  communication between processes similar to that of mpi, but
  a much simpler interface will be used and objects will be
  passed as messages.
+
+## Future Work
+
