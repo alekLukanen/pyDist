@@ -46,7 +46,7 @@ def add_jobs_to_node(node, count):
     
 
 if __name__ == '__main__':
-    node = start_head_node(server_ip='192.168.0.15', server_port=9000)
+    node = start_head_node(server_ip='192.168.1.100', server_port=9000)
     testerHelpers.wait_for_user()
     add_jobs_to_node(node, 50)
     node.request_close_server()

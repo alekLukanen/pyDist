@@ -124,18 +124,23 @@ class Node(BaseNode):
     def create_server(self):
         #rest server thread
         self.REST_thread = threading.Thread(target=RESTEndpoints.boot,args=(self.ip,self.port,self,))
+        self.REST_thread.daemon = True
         self.REST_thread.start()
         #general info thread
         self.general_thread = threading.Thread(target=self.general_processor)
+        self.general_thread.daemon = True
         self.general_thread.start()
         #job thread (new incoming jobs or finished jobs)
         self.job_thread = threading.Thread(target=self.job_processor)
+        self.job_thread.daemon = True
         self.job_thread.start()
         #create runner thread
         self.job_runner_thread = threading.Thread(target=self.job_runner)
+        self.job_runner.daemon = True
         self.job_runner_thread.start()
         #job manager thread
         self.job_manager_thread = threading.Thread(target=self.job_manager_processor)
+        self.job_manager_thread.daemon = True
         self.job_manager_thread.start()
         
     def update_NodeInt_counts(self):
