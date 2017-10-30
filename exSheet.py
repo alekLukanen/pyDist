@@ -35,8 +35,8 @@ def estimatePi(n):
     pi = 4.0 * inside / n
     return pi
 
-def call_ep(n):
-    return estimatePi(n)
+def call_ep(object_value):
+    return estimatePi(object_value.n)
     
 def pickleObj(fileName,job,data):
     with open(fileName,'w') as f:

@@ -21,16 +21,16 @@ def convertRunnerToBase(job):
 class BaseJob(object):
     
     def __init__(self):
-        self.file_name = ''
-        self.num_instances = 1
-        self.from_ip = None
-        self.from_port = None
-        self.data = None #can be any python object
-        self.job_id = 'example_id'
-        self.function_name = 'no_function'
-        self.arguements = []
-        self.return_value = ''
-        self.finished = False
+        self.file_name = ''                  #string
+        self.num_instances = 1               #int
+        self.from_ip = None                  #string
+        self.from_port = None                #int
+        self.data = None                     #object
+        self.job_id = 'example_id'           #object
+        self.function_name = 'no_function'   #string
+        self.arguements = ()                 #object
+        self.return_value = ''               #object
+        self.finished = False                #bool
         
     def convert_root_node(self):
         if (self.root_node==None):
@@ -45,10 +45,10 @@ class BaseJob(object):
                 'from_ip': self.from_ip,
                 'from_port': self.from_port,
                 'data': pickleFunctions.createPickle(self.data).decode('utf-8'),
-                'job_id': self.job_id,
+                'job_id': pickleFunctions.createPickle(self.job_id).decode('utf-8'),
                 'function_name': self.function_name,
-                'arguements': self.arguements,
-                'return_value': self.return_value,
+                'arguements': pickleFunctions.createPickle(self.arguements).decode('utf-8'),
+                'return_value': pickleFunctions.createPickle(self.return_value).decode('utf-8'),
                 'finished': self.finished
                 }
         return dictionary
@@ -59,10 +59,10 @@ class BaseJob(object):
         self.from_ip = data['from_ip'] if 'from_ip' in data else None
         self.from_port = data['from_port'] if 'from_port' in data else None
         self.data = pickleFunctions.unPickle(data['data'].encode()) if 'data' in data else ''
-        self.job_id = data['job_id'] if 'job_id' in data else ''
+        self.job_id = pickleFunctions.unPickle(data['job_id'].encode()) if 'job_id' in data else ''
         self.function_name = data['function_name'] if 'function_name' in data else ''
-        self.arguements = data['arguements'] if 'arguements' in data else ()
-        self.return_value = data['return_value'] if 'return_value' in data else ''
+        self.arguements = pickleFunctions.unPickle(data['arguements'].encode()) if 'arguements' in data else ()
+        self.return_value = pickleFunctions.unPickle(data['return_value'].encode()) if 'return_value' in data else ''
         self.finished = data['finished'] if 'finished' in data else False
      
     def __str__(self):
@@ -73,10 +73,10 @@ class JobRunner(BaseJob):
     
     def __init__(self):
         BaseJob.__init__(self)
-        self.node_index = -1
-        self.node_id = -1
-        self.job_manager_id = -1
-        self.processor = None
+        self.node_index = -1       #int
+        self.node_id = -1          #int
+        self.job_manager_id = -1   #string/int
+        self.processor = None      #bool
         
     def convert_to_dictionary(self):
         dictionary = {
@@ -86,10 +86,10 @@ class JobRunner(BaseJob):
                 'from_ip': self.from_ip,
                 'from_port': self.from_port,
                 'data': pickleFunctions.createPickle(self.data).decode('utf-8'),
-                'job_id': self.job_id,
+                'job_id': pickleFunctions.createPickle(self.job_id).decode('utf-8'),
                 'function_name': self.function_name,
-                'arguements': self.arguements,
-                'return_value': self.return_value,
+                'arguements': pickleFunctions.createPickle(self.arguements).decode('utf-8'),
+                'return_value': pickleFunctions.createPickle(self.return_value).decode('utf-8'),
                 'finished': self.finished,
                 'job_manager_id': self.job_manager_id,
                 'processor': True if self.processor!=None else False
@@ -102,10 +102,10 @@ class JobRunner(BaseJob):
         self.from_ip = data['from_ip'] if 'from_ip' in data else None
         self.from_port = data['from_port'] if 'from_port' in data else None
         self.data = pickleFunctions.unPickle(data['data'].encode()) if 'data' in data else ''
-        self.job_id = data['job_id'] if 'job_id' in data else ''
+        self.job_id = pickleFunctions.unPickle(data['job_id'].encode()) if 'job_id' in data else ''
         self.function_name = data['function_name'] if 'function_name' in data else ''
-        self.arguements = data['arguements'] if 'arguements' in data else ()
-        self.return_value = data['return_value'] if 'return_value' in data else ''
+        self.arguements = pickleFunctions.unPickle(data['arguements'].encode()) if 'arguements' in data else ()
+        self.return_value = pickleFunctions.unPickle(data['return_value'].encode()) if 'return_value' in data else ''
         self.finished = data['finished'] if 'finished' in data else False
         self.sent_to_node = data['sent_to_node'] if 'sent_to_node' in data else -1
         self.run = data['run'] if 'run' in data else False

@@ -156,7 +156,6 @@ class Node(BaseNode):
         previous_job = None
         num_jobs_dequed = 0
         while(True):
-            
             if (previous_job==None):
                 #self.logger.debug('(QUEUE %d) getting job from queue' % num_jobs_dequed)
                 job = self.job_queue.get()

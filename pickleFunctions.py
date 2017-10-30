@@ -6,6 +6,7 @@ Created on Sun Dec 25 14:30:29 2016
 """
 
 import pickle
+import dill
 from tempfile import TemporaryFile
 
 def pickleObj(fileName,obj):
@@ -26,7 +27,7 @@ def unpickleObjTemp(outfile):
     return pickle.load(outfile)
 
 def createPickle(job):
-    return pickle.dumps(job,protocol=0)
+    return pickle.dumps(job, protocol=0)
     
 def unPickle(data):
     return pickle.loads(data)

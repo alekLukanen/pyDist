@@ -13,6 +13,8 @@ from Job import BaseJob
 import time
 import testerHelpers
 
+import pandas
+
 def start_head_node(server_ip='0.0.0.0', server_port=9000):
     node = Node()
     node.boot(server_ip,server_port)
@@ -27,7 +29,7 @@ def add_jobs_to_node(node, count):
     job = BaseJob()
     job.file_name = "exSheet"
     job.function_name = "estimatePi"
-    job.arguements = (100000000,)
+    job.arguements = (100000,)
     job.num_instances = 1
     for _ in range(0,count):
         node.add_job(job)
@@ -44,10 +46,42 @@ def add_jobs_to_node(node, count):
         
     print ('(ANSWER) average value of PI: %1.5f' % (total_value/count))
     
+    
+class object_for_job(object):
+    def __init__(self, n):
+        self.n = n
+            
+#add jobs to the node that have arguements that are not python primatives.
+#So place objects in the arguements, this should not hang when the job
+#is sent to the client.
+def add_jobs_with_object_arguements_to_node(node, count):
+    table = pandas.DataFrame(index=range(0,count), columns=['n'])
+    table['n'] = 10000
+    job = BaseJob()
+    job.file_name = "exSheet"
+    job.function_name = "call_ep"
+    job.num_instances = 1
+    for i in range(0,count):
+        job.arguements = (table.iloc[i],)
+        node.add_job(job)
+    
+    get_results_and_check_count(node, count)
+    
+#for the given node check to make sure the count returned is correct
+def get_results_and_check_count(node, count):
+    total = 0
+    while(True):
+        result = node.get_result()
+        print ('(%d) return_value: %s' %  (total, result.return_value))
+        if (total==count-1):
+            break
+        total+=1
+        
+    print ('(COUNT) %d' % count)
 
 if __name__ == '__main__':
-    node = start_head_node(server_ip='192.168.1.100', server_port=9000)
+    node = start_head_node(server_ip='0.0.0.0', server_port=9000)
     testerHelpers.wait_for_user()
-    add_jobs_to_node(node, 3000)
+    add_jobs_with_object_arguements_to_node(node, 10)
     node.request_close_server()
     
