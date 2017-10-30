@@ -6,7 +6,6 @@ Created on Sun Dec 25 14:30:29 2016
 """
 
 import pickle
-import dill
 from tempfile import TemporaryFile
 
 def pickleObj(fileName,obj):
