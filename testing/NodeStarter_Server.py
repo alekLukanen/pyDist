@@ -27,7 +27,7 @@ def add_jobs_to_node(node, count):
     job = BaseJob()
     job.file_name = "exSheet"
     job.function_name = "estimatePi"
-    job.arguements = (1000000,)
+    job.arguements = (100000000,)
     job.num_instances = 1
     for _ in range(0,count):
         node.add_job(job)
@@ -48,6 +48,6 @@ def add_jobs_to_node(node, count):
 if __name__ == '__main__':
     node = start_head_node(server_ip='192.168.1.100', server_port=9000)
     testerHelpers.wait_for_user()
-    add_jobs_to_node(node, 50)
+    add_jobs_to_node(node, 3000)
     node.request_close_server()
     

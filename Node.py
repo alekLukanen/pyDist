@@ -124,7 +124,7 @@ class Node(BaseNode):
     def create_server(self):
         #rest server thread
         self.REST_thread = threading.Thread(target=RESTEndpoints.boot,args=(self.ip,self.port,self,))
-        self.REST_thread.daemon = True
+        self.REST_thread.daemon = False
         self.REST_thread.start()
         #general info thread
         self.general_thread = threading.Thread(target=self.general_processor)
@@ -136,7 +136,7 @@ class Node(BaseNode):
         self.job_thread.start()
         #create runner thread
         self.job_runner_thread = threading.Thread(target=self.job_runner)
-        self.job_runner.daemon = True
+        self.job_runner_thread.daemon = True
         self.job_runner_thread.start()
         #job manager thread
         self.job_manager_thread = threading.Thread(target=self.job_manager_processor)
