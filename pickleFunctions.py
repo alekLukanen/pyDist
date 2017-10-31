@@ -26,7 +26,7 @@ def unpickleObjTemp(outfile):
     return pickle.load(outfile)
 
 def createPickle(job):
-    return pickle.dumps(job, protocol=0)
+    return pickle.dumps(job)
     
 def unPickle(data):
     return pickle.loads(data)

@@ -25,11 +25,11 @@ def check_interfaces(node):
         print ('jobs sent to interface (ip:%s , port%d): %s' 
                % (interface.ip, interface.port, [str(job) for job in interface.jobs_sent]))
 
-def add_jobs_to_node(node, count):
+def add_jobs_to_node(node, count, n):
     job = BaseJob()
     job.file_name = "exSheet"
     job.function_name = "estimatePi"
-    job.arguements = (100000,)
+    job.arguements = (n,)
     job.num_instances = 1
     for _ in range(0,count):
         node.add_job(job)
@@ -54,9 +54,9 @@ class object_for_job(object):
 #add jobs to the node that have arguements that are not python primatives.
 #So place objects in the arguements, this should not hang when the job
 #is sent to the client.
-def add_jobs_with_object_arguements_to_node(node, count):
+def add_jobs_with_object_arguements_to_node(node, count, n):
     table = pandas.DataFrame(index=range(0,count), columns=['n'])
-    table['n'] = 10000
+    table['n'] = n
     job = BaseJob()
     job.file_name = "exSheet"
     job.function_name = "call_ep"
@@ -82,6 +82,6 @@ def get_results_and_check_count(node, count):
 if __name__ == '__main__':
     node = start_head_node(server_ip='0.0.0.0', server_port=9000)
     testerHelpers.wait_for_user()
-    add_jobs_with_object_arguements_to_node(node, 10)
+    add_jobs_with_object_arguements_to_node(node, 16, 1000)
     node.request_close_server()
     
