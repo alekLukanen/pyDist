@@ -21,9 +21,12 @@ class ServerContext(object):
     def __init__(self):
         self.node_ref = None
         
-        self.general_queue = Queue(0) #all tasks submitted here
-        self.job_queue = Queue(0) #user jobs submitter here
-        self.results_queue = Queue(0)
+        self.general_queue = Queue(0)  #all tasks submitted here
+        self.job_queue = Queue(0)      #user jobs submitter here
+        self.results_queue = Queue(0)  #the results recieved here
+        
+        self.job_queue_count = 0
+        self.job_queue_lock = Lock()
         
         self.running_jobs = []
         
@@ -49,7 +52,8 @@ class ServerContext(object):
     def get_node_counts(self):
         num_cores = self.node_ref.jobManager.num_processors
         num_running = len(self.node_ref.jobManager.running_job_dictionary)
-        dictionary = {'num_cores':num_cores, 'num_running': num_running}
+        dictionary = {'num_cores':num_cores, 'num_running': num_running
+                      , 'num_queued': self.job_queue_count}
         return json.dumps( dictionary )
         
     def add_general_element(self, general_element):
@@ -64,6 +68,9 @@ class ServerContext(object):
         
     def add_job_element(self, job_element):
         self.job_queue.put(job_element)
+        self.job_queue_lock.acquire()
+        self.job_queue_count+=1
+        self.job_queue_lock.release()
         
     def recieved_data(self,data_type):
         self.server_recieved_data_event.set()

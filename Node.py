@@ -17,6 +17,8 @@ class BaseNode(object):
         self.id = 'default_id'
         self.ip = "0.0.0.0"
         self.port = 9000
+        self.server_ip = None
+        self.server_port = None
         self.num_cores = 0
         self.num_active_jobs = 0
         #added to a new node's id. 
@@ -115,6 +117,8 @@ class Node(BaseNode):
     def connect(self, server_ip, server_port):
         self.logger.debug("connecting to %s:%d" % (server_ip,server_port))
         response = intercom.connect_as_slave(server_ip, server_port, self)
+        self.server_ip = server_ip
+        self.server_port = server_port
         if (response==None):
             print ("could not connect to that host, trying again")
         else:
@@ -175,7 +179,7 @@ class Node(BaseNode):
                 job
                 self.interfaces_lock.acquire()
                 for NodeInt in self.interfaces:
-                    if (NodeInt.num_running<NodeInt.num_cores):#run the process if true
+                    if ((NodeInt.num_running+NodeInt.num_queued)<NodeInt.num_cores):#run the process if true
                         self.logger.debug('(JOB>>>WORKER) ip: %s, port: %d'
                                           % (NodeInt.ip, NodeInt.port))
                         job.from_ip = self.ip
@@ -217,6 +221,9 @@ class Node(BaseNode):
         while (True):
             sc = self.get_server_context()
             job_element = sc.job_queue.get()
+            sc.job_queue_lock.acquire()
+            sc.job_queue_count-=1
+            sc.job_queue_lock.release()
             #the job submitted by the user
             job = Job.BaseJob()
             job.job_from_dictionary(job_element)

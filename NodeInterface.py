@@ -49,6 +49,7 @@ class NodeInterface(object):
         self.port = 9000
         self.num_cores = 1
         self.num_running = 0 
+        self.num_queued = 0
         self.jobs_sent = []
         
         
@@ -57,7 +58,8 @@ class NodeInterface(object):
         response = get_request(location)
         response = parse_response(response)
         self.num_cores = response["num_cores"] if "num_cores" in response else 1
-        self.num_running = response["num_running"] if "num_running" in response else 0
+        self.num_running = response["num_running"] if "num_running" in response else 1
+        self.num_queued = response["num_queued"] if "num_queued" in response else 1
         
     def add_job(self, job):
         job_data = job.convert_to_dictionary()
