@@ -33,6 +33,7 @@ def add_job():
 def add_slave_node():
     json_data = json.loads( request.get_data(as_text=True) ) #returns a dictionary
     sc.add_general_element({'type': ElementTypes.slave_node_recv,
+                            'from_ip': request.remote_addr,
                             'json_data': json_data})
     return 'slave noded added'
 

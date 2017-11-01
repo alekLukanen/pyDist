@@ -80,8 +80,8 @@ def get_results_and_check_count(node, count):
     print ('(COUNT) %d' % count)
 
 if __name__ == '__main__':
-    node = start_head_node(server_ip='0.0.0.0', server_port=9000)
+    node = start_head_node(server_ip='0.0.0.0', server_port=9002)
     testerHelpers.wait_for_user()
-    add_jobs_with_object_arguements_to_node(node, 16, 1000)
+    add_jobs_with_object_arguements_to_node(node, 16, 100)
     node.request_close_server()
     

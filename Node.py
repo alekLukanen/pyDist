@@ -245,6 +245,7 @@ class Node(BaseNode):
         self.logger.debug('in the processor thread')
         while(True):
             general_element = self.request_general_elements().get()
+            self.logger.debug(general_element)
             
             if (general_element['type']==ElementTypes.slave_node_recv):
                 
@@ -254,6 +255,7 @@ class Node(BaseNode):
                 #update the nodes counts. This means that the node
                 #is up to date.
                 node_interface.NodeInterface_from_dictionary(node_data) #only need ip and port
+                node_interface.ip = general_element['from_ip']
                 node_interface.update_variables()
                 
                 #update the interfaces list

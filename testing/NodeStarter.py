@@ -31,5 +31,5 @@ def start_two_nodes(server_ip='0.0.0.0'
 if __name__ == '__main__':
     #one node
     node = start_single_node(server_ip='0.0.0.0'
-                             , server_port=9000, client_ip='0.0.0.0'
-                             , client_port=9001)
+                             , server_port=9002, client_ip='0.0.0.0'
+                             , client_port=9003)
