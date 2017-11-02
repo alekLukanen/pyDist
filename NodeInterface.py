@@ -45,13 +45,12 @@ def parse_response(response):
 class NodeInterface(object):
     
     def __init__(self):
-        self.ip = '0.0.0.0'
-        self.port = 9000
-        self.num_cores = 1
-        self.num_running = 0 
-        self.num_queued = 0
+        self.ip = None
+        self.port = None
+        self.num_cores = None
+        self.num_running = None
+        self.num_queued = None
         self.jobs_sent = []
-        
         
     def update_variables(self):
         location = location_assembler(self.ip, self.port, "/nodeCounts")
@@ -76,6 +75,21 @@ class NodeInterface(object):
     
     def get_num_running(self):
         return self.num_running
+    
+    def convert_to_dictionary(self):
+        dictionary = {
+                'ip': self.ip,
+                'port': self.port,
+                'num_cores': self.num_cores,
+                'num_queued': self.num_queued
+                }
+        return dictionary
+    
+    def create_from_dictionary(self, dictionary):
+        self.ip = dictionary['ip'] if 'ip' in dictionary else None
+        self.port = dictionary['port'] if 'port' in dictionary else None
+        self.num_cores = dictionary['num_cores'] if 'num_cores' in dictionary else None
+        self.num_queued = dictionary['num_queued'] if 'num_queued' in dictionary else None
     
     def NodeInterface_from_dictionary(self, data):
         self.ip = data["ip"] if 'ip' in data else '0.0.0.0'
