@@ -22,6 +22,8 @@ class BaseTask(object):
         self.cluster_trace = []
         self.finished = False
         
+        self.job_id = None
+        
     def convert_obj_to_dictionary(self, obj):
         if (obj!=None):
             return obj.convert_to_dictionary()
@@ -32,10 +34,11 @@ class BaseTask(object):
                 'node_interface': self.convert_obj_to_dictionary(self.node_interface),
                 'file_name': self.file_name,
                 'function_name': self.function_name,
-                'arguements': self.arguements,
-                'return_value': self.return_value,
+                'arguements': pickleFunctions.createPickle(self.arguements).decode('latin1'),
+                'return_value': pickleFunctions.createPickle(self.return_value).decode('latin1'),
                 'cluster_trace': [self.convert_obj_to_dictionary(node) for node in self.cluster_trace],
-                'self.finished': self.finished
+                'finished': self.finished,
+                'job_id': pickleFunctions.createPickle(self.job_id).decode('latin1')
                 }
         return dictionary
     
@@ -46,11 +49,11 @@ class BaseTask(object):
         else:
             self.node_interface = None
             
-        self.file_name = dictionary['file_name'] if 'file_name' in dictionary else ''
-        self.function_name = dictionary['function_name'] if 'function_name' in dictionary else ''
+        self.file_name = dictionary['file_name'] if 'file_name' in dictionary else None
+        self.function_name = dictionary['function_name'] if 'function_name' in dictionary else None
         
         self.arguements = pickleFunctions.unPickle(dictionary['arguements'].encode('latin1')) if 'arguements' in dictionary else ()
-        self.return_value = pickleFunctions.unPickle(dictionary['return_value'].encode('latin1')) if 'return_value' in dictionary else ''
+        self.return_value = pickleFunctions.unPickle(dictionary['return_value'].encode('latin1')) if 'return_value' in dictionary else None
         
         if ('cluster_trace' in dictionary):
             for node_dict in dictionary['cluster_trace']:
@@ -59,8 +62,10 @@ class BaseTask(object):
                 self.cluster_trace.append(node)
         else:
             self.cluster_trace = []
-            
+        
         self.finished = dictionary['finished'] if 'finished' in dictionary else False
+                                  
+        self.job_id = pickleFunctions.unPickle(dictionary['job_id'].encode('latin1')) if 'job_id' in dictionary else ''
         
         
         
