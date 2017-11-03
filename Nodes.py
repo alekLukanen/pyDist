@@ -45,7 +45,7 @@ class ClusterExecutorNode(object):
         else:
             self.interface = None
             
-        
+    
         
         
         
