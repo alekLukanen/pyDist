@@ -38,7 +38,7 @@ class BaseTask(object):
                 'function_name': self.function_name,
                 'arguements': pickleFunctions.createPickle(self.arguements).decode('latin1'),
                 'return_value': pickleFunctions.createPickle(self.return_value).decode('latin1'),
-                'exception': pickleFunctions.createPickle(self.exception.decode('latin1')),
+                'exception': pickleFunctions.createPickle(self.exception).decode('latin1'),
                 'cluster_trace': [self.convert_obj_to_dictionary(node) for node in self.cluster_trace],
                 'finished': self.finished,
                 'job_id': pickleFunctions.createPickle(self.job_id).decode('latin1')
@@ -48,8 +48,11 @@ class BaseTask(object):
     
     def create_from_dictionary(self, dictionary):
         if ('node_interface' in dictionary):
-            self.node_interface = NodeInterface.NodeInterface()
-            self.node_interface.create_from_dictionary(dictionary['node_interface'])
+            if (dictionary['node_interface']!=None):
+                self.node_interface = NodeInterface.NodeInterface()
+                self.node_interface.create_from_dictionary(dictionary['node_interface'])
+            else:
+                self.node_interface = None
         else:
             self.node_interface = None
             
@@ -107,9 +110,35 @@ class Task(BaseTask):
         print ('add_done_callback()')
         self.callbacks.append(fn)
         
+    def convert_to_dictionary(self):
+        dictionary = {
+                'cancel': self.cancel,
+                'cancelled': self.cancelled,
+                'callbacks': [callback.convert_to_dictionary() for callback in self.callbacks]
+                }
+        dictionary.update(super(Task, self).convert_to_dictionary())
+        return dictionary
+        
+    def create_from_dictionary(self, dictionary):
+        super(Task, self).create_from_dictionary(dictionary)
+        self.cancel = dictionary['cancel'] if 'cancel' in dictionary else False
+        self.cancelled = dictionary['cancelled'] if 'cancelled' in dictionary else False
+        if ('callbacks' in dictionary):
+            for callback in dictionary['callbacks']:
+                task = Task()
+                task.create_from_dictionary(callback)
+                self.callbacks.append(task)
+        
     #other functions here
         
     
     
+if __name__ == '__main__':
+    task = Task()
+    task.cancelled = True
+    serial_task = task.convert_to_dictionary()
+    print ('serial_task %s' % serial_task)
+    new_task = Task()
+    new_task.create_from_dictionary(serial_task)
     
         

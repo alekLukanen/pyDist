@@ -11,6 +11,7 @@ from aiohttp import web
 
 import NodeInterface
 import endpoints
+import Tasks
     
 class ClusterExecutorNode(object):
     
@@ -18,6 +19,8 @@ class ClusterExecutorNode(object):
         self.interface = NodeInterface.NodeInterface()
         self.server_interfaces = []
         self.client_interfaces = []
+        
+        self.tasks = []
         
         self.ip = '0.0.0.0'
         self.port = 9000
@@ -29,13 +32,14 @@ class ClusterExecutorNode(object):
 
         self.app = web.Application(loop=self.loop)
         self.app.router.add_route('GET', '/', endpoints.index)
+        self.app.router.add_route('POST', '/addJob', endpoints.addJob)
         
         self.handler = None
         self.server = None
         self.serverFuture = None
         
     def boot(self, ip, port):
-        #web.run_app(self.app, host=self.ip, port=self.port)
+        endpoints.node = self #give the endpoints a reference to this object
         self.handler = self.app.make_handler()
         self.server = self.loop.create_server(self.handler, self.ip, self.port)
         self.loop.run_in_executor(None, self.startRESTEndpoints)
@@ -54,6 +58,31 @@ class ClusterExecutorNode(object):
         
     def get_address(self):
         return "http://%s:%d" % (self.ip, self.port)
+    
+    def add_existing_task(self, task):
+        task_object = Tasks.Task()
+        task_object.create_from_dictionary(task)
+        self.tasks.append(task_object)
+        
+    
+    #EXECUTOR METHODS HERE####################
+    
+    #submit a new job here
+    def submit(self, fn, *args, **kwards):
+        print ('submit')
+        
+    def map(self, func, *iterables, timeout=None, chuncksize=1):
+        print ('map function')
+        
+    def shutdown(self, wait=True):
+        self.loop.stop()
+        self.loop.close()
+    
+    
+    ##########################################
+    
+    
+    
     
     def convert_to_dictionary(self):
         dictionary = {
