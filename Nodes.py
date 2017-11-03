@@ -7,13 +7,10 @@ Created on Thu Nov  2 12:27:31 2017
 """
 
 import asyncio
-import NodeInterface
 from aiohttp import web
 
-async def index(request):
-    print ('here')
-    return web.Response(text='Hello Aiohttp!')
-
+import NodeInterface
+import endpoints
     
 class ClusterExecutorNode(object):
     
@@ -31,8 +28,23 @@ class ClusterExecutorNode(object):
         self.loop = asyncio.get_event_loop()
 
         self.app = web.Application(loop=self.loop)
-        self.app.router.add_route('GET', '/', index)
-        web.run_app(self.app, host=self.ip, port=self.port)
+        self.app.router.add_route('GET', '/', endpoints.index)
+        
+        self.handler = None
+        self.server = None
+        self.serverFuture = None
+        
+    def boot(self, ip, port):
+        #web.run_app(self.app, host=self.ip, port=self.port)
+        self.handler = self.app.make_handler()
+        self.server = self.loop.create_server(self.handler, self.ip, self.port)
+        self.loop.run_in_executor(None, self.startRESTEndpoints)
+        
+    def startRESTEndpoints(self):
+        print ('start rest endpoints')
+        self.serverFuture = self.loop.run_until_complete(self.server)
+        self.loop.run_forever()
+        print ('at end of start rest endpoints')
         
     def increment_id_tick(self):
         self.node_id_tick+=1
@@ -59,8 +71,6 @@ class ClusterExecutorNode(object):
             self.interface.create_from_dictionary(dictionary['interface'])
         else:
             self.interface = None
-            
-    
         
         
         
@@ -68,5 +78,6 @@ if __name__=='__main__':
     print ('starting a ClusterExecutorNode...')
     node = ClusterExecutorNode()
     node.boot('0.0.0.0', 9000)
+    print (node.get_address())
     
     
