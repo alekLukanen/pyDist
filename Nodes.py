@@ -78,10 +78,7 @@ class ClusterExecutorNode(object):
         self.loop.stop()
         self.loop.close()
     
-    
     ##########################################
-    
-    
     
     
     def convert_to_dictionary(self):

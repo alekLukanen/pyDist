@@ -12,7 +12,7 @@ import json
 node = None
 
 async def index(request):
-    print ('here')
+    print ('/')
     return web.Response(text='Hello Aiohttp!')
 
 async def addJob(request):
@@ -21,4 +21,3 @@ async def addJob(request):
     node.add_existing_task(task_data)
     return web.Response(text='got the job')
 
-async def 
