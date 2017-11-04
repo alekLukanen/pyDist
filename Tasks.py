@@ -14,8 +14,7 @@ class BaseTask(object):
     def __init__(self):
         self.node_interface = None
         
-        self.file_name = None
-        self.function_name = None
+        self.function = None
         
         self.arguements = ()
         self.return_value = None
@@ -34,8 +33,7 @@ class BaseTask(object):
     def convert_to_dictionary(self):
         dictionary = {
                 'node_interface': self.convert_obj_to_dictionary(self.node_interface),
-                'file_name': self.file_name,
-                'function_name': self.function_name,
+                'function': pickleFunctions.createPickle(self.function).decode('latin1'),
                 'arguements': pickleFunctions.createPickle(self.arguements).decode('latin1'),
                 'return_value': pickleFunctions.createPickle(self.return_value).decode('latin1'),
                 'exception': pickleFunctions.createPickle(self.exception).decode('latin1'),
@@ -56,8 +54,7 @@ class BaseTask(object):
         else:
             self.node_interface = None
             
-        self.file_name = dictionary['file_name'] if 'file_name' in dictionary else None
-        self.function_name = dictionary['function_name'] if 'function_name' in dictionary else None
+        self.function = pickleFunctions.unPickle(dictionary['function'].encode('latin1')) if 'function' in dictionary else None
         self.exception = pickleFunctions.unPickle(dictionary['exception'].encode('latin1')) if 'exception' in dictionary else None
         
         self.arguements = pickleFunctions.unPickle(dictionary['arguements'].encode('latin1')) if 'arguements' in dictionary else ()

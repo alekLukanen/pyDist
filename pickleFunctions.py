@@ -5,31 +5,31 @@ Created on Sun Dec 25 14:30:29 2016
 @author: alek
 """
 
-import pickle
+import cloudpickle
 from tempfile import TemporaryFile
 
 def pickleObj(fileName,obj):
     with open(fileName,'w') as f:
-        pickle.dump(obj,f)
+        cloudpickle.dump(obj,f)
     
 def unpickleObj(fileName):
     with open(fileName) as f:
-        return pickle.load(f)
+        return cloudpickle.load(f)
         
 def pickleObjTemp(job,data):
     outfile = TemporaryFile()
-    pickle.dump([job,data],outfile)
+    cloudpickle.dump([job,data],outfile)
     outfile.seek(0)
     return outfile
 
 def unpickleObjTemp(outfile):
-    return pickle.load(outfile)
+    return cloudpickle.load(outfile)
 
 def createPickle(job):
-    return pickle.dumps(job)
+    return cloudpickle.dumps(job)
     
 def unPickle(data):
-    return pickle.loads(data)
+    return cloudpickle.loads(data)
     
 
 if __name__ == '__main__':

@@ -59,16 +59,24 @@ class ClusterExecutorNode(object):
     def get_address(self):
         return "http://%s:%d" % (self.ip, self.port)
     
-    def add_existing_task(self, task):
+    async def add_existing_task_async(self, task):
         task_object = Tasks.Task()
         task_object.create_from_dictionary(task)
         self.tasks.append(task_object)
-        
+    
+    def add_existing_task(self, task):
+        print ('add_existing_task')
+        future = asyncio.run_coroutine_threadsafe(self.add_existing_task_async(task), self.loop)
+        future.result()
+        return True
     
     #EXECUTOR METHODS HERE####################
     
     #submit a new job here
+    #this is where a new task needs to be created
     def submit(self, fn, *args, **kwards):
+        task = Tasks.Task()
+        
         print ('submit')
         
     def map(self, func, *iterables, timeout=None, chuncksize=1):
@@ -104,6 +112,7 @@ if __name__=='__main__':
     print ('starting a ClusterExecutorNode...')
     node = ClusterExecutorNode()
     node.boot('0.0.0.0', 9000)
+    node.add_existing_task({'a':1})
     print (node.get_address())
     
     
