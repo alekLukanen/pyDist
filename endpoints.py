@@ -21,3 +21,8 @@ async def addJob(request):
     node.add_existing_task(task_data)
     return web.Response(text='got the job')
 
+async def nodeCounts(request):
+    print ('/nodeCounts')
+    data = node.get_counts()
+    return data
+

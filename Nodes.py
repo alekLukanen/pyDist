@@ -8,6 +8,7 @@ Created on Thu Nov  2 12:27:31 2017
 
 import asyncio
 from aiohttp import web
+import json
 
 import NodeInterface
 import endpoints
@@ -37,6 +38,13 @@ class ClusterExecutorNode(object):
         self.handler = None
         self.server = None
         self.serverFuture = None
+        
+    def get_node_counts(self):
+        num_cores = self.interface.num_cores
+        num_running = len(self.node_ref.jobManager.running_job_dictionary)
+        dictionary = {'num_cores':num_cores, 'num_running': num_running
+                      , 'num_queued': self.job_queue_count}
+        return json.dumps( dictionary )
         
     def boot(self, ip, port):
         endpoints.node = self #give the endpoints a reference to this object
