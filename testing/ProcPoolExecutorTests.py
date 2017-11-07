@@ -5,20 +5,26 @@ Created on Mon Nov  6 16:25:08 2017
 
 @author: alek
 """
+import sys
+sys.path.append('../')
 
 import time
 import concurrent.futures
+
+from TaskManager import TaskManager
 
 def waitFunc(a,t):
     time.sleep(a)
     return a, t
 
-executor = concurrent.futures.ProcessPoolExecutor(max_workers=4)
-tasks = []
-
-for i in range(0,100):
-    tasks.append(executor.submit(waitFunc, 0.01, i))
-
-for future in concurrent.futures.as_completed(tasks):
-    print ('wait time: %s, future: %s' % future.result())
-
+if __name__ == '__main__':
+    
+    taskManager = TaskManager()
+    for i in range(0,20):
+        taskManager.tasks.append(
+                taskManager.executor.submit(waitFunc, 0.5, i))
+        
+    for task in taskManager.as_completed():
+        print ('wait time: %s, future: %s' % task.result())
+    
+    
