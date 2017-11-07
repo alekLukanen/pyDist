@@ -16,8 +16,14 @@ class WorkerItem(object):
         self.fn = fn
         self.args = args
         self.kwargs = kwargs
-        
+
+
+class VariableItem(object):
     
+    def __init__(self, variable, ip, port):
+        self.variable = variable
+        self.ip = ip
+        self.port = port
 
 #the base task will be used as a simple version of the full task.
 class Task(concurrent.futures.Future):
