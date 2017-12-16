@@ -13,6 +13,7 @@ import json
 import NodeInterface
 import endpoints
 import Tasks
+import Message
     
 class ClusterExecutorNode(object):
     
@@ -34,6 +35,7 @@ class ClusterExecutorNode(object):
         self.app = web.Application(loop=self.loop)
         self.app.router.add_route('GET', '/', endpoints.index)
         self.app.router.add_route('POST', '/addJob', endpoints.addJob)
+        self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
         
         self.handler = None
         self.server = None
@@ -67,9 +69,9 @@ class ClusterExecutorNode(object):
     def get_address(self):
         return "http://%s:%d" % (self.ip, self.port)
     
-    async def add_existing_task_async(self, task):
+    async def add_existing_task_async(self, task_data):
         task_object = Tasks.Task()
-        task_object.create_from_dictionary(task)
+        task_object.create_from_dictionary(task_data)
         self.tasks.append(task_object)
     
     def add_existing_task(self, task):
@@ -77,6 +79,12 @@ class ClusterExecutorNode(object):
         future = asyncio.run_coroutine_threadsafe(self.add_existing_task_async(task), self.loop)
         future.result()
         return True
+    
+    def add_string_message(self, message):
+        print ('add_message')
+        msg = Message.StringMessage()
+        msg.create_from_dictionary(message)
+        print ('RECIEVED MESSAGE: ', msg)
     
     #EXECUTOR METHODS HERE####################
     

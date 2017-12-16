@@ -27,4 +27,3 @@ if __name__ == '__main__':
     for task in taskManager.as_completed():
         print ('wait time: %s, future: %s' % task.result())
     
-    

@@ -17,9 +17,16 @@ async def index(request):
 
 async def addJob(request):
     print ('/addJob')
-    task_data = json.loads( request.text() )
+    task_data = json.loads( await request.text() )
     node.add_existing_task(task_data)
     return web.Response(text='got the job')
+
+async def addStringMessage(request):
+    print ('/addStringMessage')
+    print ('raw message: ', await request.text())
+    message_data = json.loads( await request.text() )
+    node.add_string_message(message_data)
+    return web.Response(text='got the message')
 
 async def nodeCounts(request):
     print ('/nodeCounts')
