@@ -32,6 +32,9 @@ class BaseJob(object):
         self.return_value = ''               #object
         self.finished = False                #bool
         
+    def pickle(self):
+        return 
+        
     def convert_root_node(self):
         if (self.root_node==None):
             return None
