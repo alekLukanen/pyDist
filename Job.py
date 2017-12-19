@@ -33,8 +33,8 @@ class BaseJob(object):
         self.finished = False                #bool
         
     def pickle(self):
-        return 
-        
+        return pickleFunctions.createPickleServer(self)
+    
     def convert_root_node(self):
         if (self.root_node==None):
             return None
@@ -120,5 +120,23 @@ class JobRunner(BaseJob):
         
         
         
-        
+if __name__ == '__main__':
+    print ('job testing')
+    
+    print ('--------BaseJob()---------')
+    base = BaseJob()
+    base.arguements = (1,2,)
+    base_pickle = base.pickle()
+    print ('base_pickle: ', base_pickle)
+    base_unpickle = pickleFunctions.unPickle(base_pickle)
+    print ('base_unpickle: ', base_unpickle)
+    print ('')
+    
+    print ('--------JobRunner()---------')
+    runner = JobRunner()
+    runner.arguements = (1,2,3,)
+    runner_pickle = runner.pickle()
+    print ('runner_pickle: ', runner_pickle)
+    runner_unpickle = pickleFunctions.unPickle(runner_pickle)
+    print ('runner_unpickle: ', runner_unpickle)
         
