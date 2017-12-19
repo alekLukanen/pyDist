@@ -14,7 +14,9 @@ import NodeInterface
 import endpoints
 import Tasks
 import Message
-    
+
+import pickleFunctions    
+
 class ClusterExecutorNode(object):
     
     def __init__(self):
@@ -82,8 +84,7 @@ class ClusterExecutorNode(object):
     
     def add_string_message(self, message):
         print ('add_message')
-        msg = Message.StringMessage()
-        msg.create_from_dictionary(message)
+        msg = pickleFunctions.unPickleServer(message['data'])
         print ('RECIEVED MESSAGE: ', msg)
     
     #EXECUTOR METHODS HERE####################

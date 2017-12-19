@@ -57,7 +57,8 @@ def close_server(server_ip, server_port):
     return response
 
 def post_string_message(server_ip, server_port, message):
-    message_data = message.convert_to_dictionary()
+    message_data = message.createDictionary()
+    print ('message_data: ', message_data)
     location = location_assembler(server_ip, server_port, "/addStringMessage")
     response = post_request(location, message_data)
     return parse_response(response)

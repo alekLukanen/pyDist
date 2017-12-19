@@ -5,13 +5,26 @@ Created on Fri Dec 15 22:20:15 2017
 
 @author: lukanen
 """
+import pickleFunctions
 
-class StackMessage(object):
+class BaseMessage(object):
+    
+    def __init__(self):
+        self.id = ''
+        self.session_id = ''
+    
+    def pickle(self):
+        return pickleFunctions.createPickleServer(self)
+    
+    def createDictionary(self):
+        return {'data': self.pickle()}
+
+class StackMessage(BaseMessage):
     
     def __init__(self, data=[]):
+        BaseMessage.__init__(self)
         self.data = data
         self.cluster_trace = []
-        self.name = 'MessageBase'
         
     def addItem(self, item):
         self.data.append(item)
@@ -25,19 +38,11 @@ class StackMessage(object):
     def __str__(self):
         return ("len(data): %d, len(cluster_trace)" % (len(self.data),len(self.cluster_trace)))
 
-class StringMessage(object):
+class StringMessage(BaseMessage):
     
     def __init__(self, message=''):
+        BaseMessage.__init__(self)
         self.message = message
-        
-    def convert_to_dictionary(self):
-        dictionary = {
-                'message': self.message
-                }
-        return dictionary
-        
-    def create_from_dictionary(self, dictionary):
-        self.message = dictionary['message'] if 'message' in dictionary else None
         
     def __str__(self):
         return 'message: %s' % self.message
