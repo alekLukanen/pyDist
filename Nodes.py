@@ -7,6 +7,12 @@ Created on Thu Nov  2 12:27:31 2017
 """
 
 import asyncio
+lp = asyncio.get_event_loop()
+if (lp.is_closed()==True):
+    print ('the current eventloop was closed, a new one was created')
+    lp_temp = asyncio.new_event_loop()
+    asyncio.set_event_loop(lp_temp)
+
 from aiohttp import web
 import json
 
@@ -32,9 +38,10 @@ class ClusterExecutorNode(object):
         self.node_id_tick = 0
         self.job_id_tick = 0
         
-        self.loop = asyncio.get_event_loop()
-
-        self.app = web.Application(loop=self.loop)
+        self.server_loop = asyncio.get_event_loop()
+        self.io_loop = asyncio.new_event_loop()
+        
+        self.app = web.Application(loop=self.server_loop)
         self.app.router.add_route('GET', '/', endpoints.index)
         self.app.router.add_route('POST', '/addJob', endpoints.addJob)
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
@@ -52,22 +59,35 @@ class ClusterExecutorNode(object):
         
     def boot(self, ip, port):
         endpoints.node = self #give the endpoints a reference to this object
-        self.handler = self.app.make_handler()
-        self.server = self.loop.create_server(self.handler, self.ip, self.port)
-        self.loop.run_in_executor(None, self.startRESTEndpoints)
+        #self.handler = self.app.make_handler()
+        #self.server = self.server_loop.create_server(self.handler, self.ip, self.port)
+        #self.io_loop.run_in_executor(None, self.startRESTEndpoints)
+        self.server_loop.run_in_executor(None, self.startRESTEndpoints)
         
     def startRESTEndpoints(self):
         print ('start rest endpoints')
-        self.serverFuture = self.loop.run_until_complete(self.server)
+        web.run_app(self.app, host=self.ip, port=self.port)
+        print ('the rest endpoints have been shutdown')
+        '''
+        print ('server: ', self.server)
+        self.serverFuture = self.server_loop.run_until_complete(self.server)
         try:
-            self.loop.run_forever()
+            print ('...in try')
+            self.server_loop.run_forever()
         finally:
+            print ('1...')
             self.server.close()
+            print ('2...')
             #self.loop.run_until_complete(self.server.wait_closed())
-            self.loop.run_until_complete(self.app.shutdown())
-            self.loop.run_until_complete(self.handler.shutdown(60.0))
-            self.loop.run_until_complete(self.app.cleanup())
-        print ('at end of start rest endpoints')
+            print ('3...')
+            self.io_loop.run_until_complete(self.app.shutdown())
+            print ('4...')
+            self.io_loop.run_until_complete(self.handler.shutdown(60.0))
+            print ('5...')
+            self.io_loop.run_until_complete(self.app.cleanup())
+        self.server_loop.close()
+        print ('the rest endpoints have been shutdown')
+        '''
         
     def increment_id_tick(self):
         self.node_id_tick+=1
@@ -107,13 +127,8 @@ class ClusterExecutorNode(object):
         print ('map function')
         
     def shutdown(self, wait=True):
-        self.server.close()
-        #self.loop.run_until_complete(self.server.wait_closed())
-        self.app.shutdown()
-        self.handler.shutdown(60.0)
-        self.app.cleanup()
-        self.loop.stop()
-        self.loop.close()
+        print ('shutdown()')
+        self.server_loop.stop()
     
     ##########################################
     

@@ -17,10 +17,12 @@ if __name__ == '__main__':
     print ('basic message test')
     node = Nodes.ClusterExecutorNode()
     node.boot('0.0.0.0', 9000)
+    print ('started node...')
     
-    time.sleep(1)
-    
+    time.sleep(1.5)
+    print ('message sent...')
     #send a message to the node
-    intercom.post_string_message('0.0.0.0', 9000, Message.StringMessage('hello, world!'))
-
-    #node.shutdown()    
+    intercom.post_string_message('0.0.0.0', 9000, Message.StringMessage('hello, world1!'))
+    intercom.post_string_message('0.0.0.0', 9000, Message.StringMessage('hello, world2!'))
+    intercom.post_string_message('0.0.0.0', 9000, Message.StringMessage('hello, world3!'))
+    node.shutdown()    
