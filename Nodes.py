@@ -59,16 +59,12 @@ class ClusterExecutorNode(object):
         
     def boot(self, ip, port):
         endpoints.node = self #give the endpoints a reference to this object
-        #self.handler = self.app.make_handler()
-        #self.server = self.server_loop.create_server(self.handler, self.ip, self.port)
-        #self.io_loop.run_in_executor(None, self.startRESTEndpoints)
-        self.server_loop.run_in_executor(None, self.startRESTEndpoints)
+        self.handler = self.app.make_handler()
+        self.server = self.server_loop.create_server(self.handler, self.ip, self.port)
+        self.io_loop.run_in_executor(None, self.startRESTEndpoints)
         
     def startRESTEndpoints(self):
         print ('start rest endpoints')
-        web.run_app(self.app, host=self.ip, port=self.port)
-        print ('the rest endpoints have been shutdown')
-        '''
         print ('server: ', self.server)
         self.serverFuture = self.server_loop.run_until_complete(self.server)
         try:
@@ -86,8 +82,8 @@ class ClusterExecutorNode(object):
             print ('5...')
             self.io_loop.run_until_complete(self.app.cleanup())
         self.server_loop.close()
+        self.io_loop.stop()
         print ('the rest endpoints have been shutdown')
-        '''
         
     def increment_id_tick(self):
         self.node_id_tick+=1
@@ -128,7 +124,7 @@ class ClusterExecutorNode(object):
         
     def shutdown(self, wait=True):
         print ('shutdown()')
-        self.server_loop.stop()
+        self.server_loop.call_soon_threadsafe(self.server_loop.stop)
     
     ##########################################
     

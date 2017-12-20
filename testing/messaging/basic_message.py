@@ -25,4 +25,7 @@ if __name__ == '__main__':
     intercom.post_string_message('0.0.0.0', 9000, Message.StringMessage('hello, world1!'))
     intercom.post_string_message('0.0.0.0', 9000, Message.StringMessage('hello, world2!'))
     intercom.post_string_message('0.0.0.0', 9000, Message.StringMessage('hello, world3!'))
+    
+    time.sleep(1)
     node.shutdown()    
+    print ('end of test')
