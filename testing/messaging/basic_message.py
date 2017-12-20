@@ -18,8 +18,9 @@ if __name__ == '__main__':
     node = Nodes.ClusterExecutorNode()
     node.boot('0.0.0.0', 9000)
     
-    time.sleep(2)
+    time.sleep(1)
     
     #send a message to the node
     intercom.post_string_message('0.0.0.0', 9000, Message.StringMessage('hello, world!'))
-    
+
+    #node.shutdown()    

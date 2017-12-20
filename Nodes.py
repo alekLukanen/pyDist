@@ -59,7 +59,14 @@ class ClusterExecutorNode(object):
     def startRESTEndpoints(self):
         print ('start rest endpoints')
         self.serverFuture = self.loop.run_until_complete(self.server)
-        self.loop.run_forever()
+        try:
+            self.loop.run_forever()
+        finally:
+            self.server.close()
+            #self.loop.run_until_complete(self.server.wait_closed())
+            self.loop.run_until_complete(self.app.shutdown())
+            self.loop.run_until_complete(self.handler.shutdown(60.0))
+            self.loop.run_until_complete(self.app.cleanup())
         print ('at end of start rest endpoints')
         
     def increment_id_tick(self):
@@ -100,6 +107,11 @@ class ClusterExecutorNode(object):
         print ('map function')
         
     def shutdown(self, wait=True):
+        self.server.close()
+        #self.loop.run_until_complete(self.server.wait_closed())
+        self.app.shutdown()
+        self.handler.shutdown(60.0)
+        self.app.cleanup()
         self.loop.stop()
         self.loop.close()
     
