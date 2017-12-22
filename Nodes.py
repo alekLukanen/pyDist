@@ -23,7 +23,7 @@ import Message
 
 import pickleFunctions    
 
-class ClusterExecutorNode(object):
+class ClusterNode(object):
     
     def __init__(self):
         self.interface = NodeInterface.NodeInterface()
@@ -59,9 +59,10 @@ class ClusterExecutorNode(object):
         
     def boot(self, ip, port):
         endpoints.node = self #give the endpoints a reference to this object
-        self.handler = self.app.make_handler()
-        self.server = self.server_loop.create_server(self.handler, self.ip, self.port)
-        self.io_loop.run_in_executor(None, self.startRESTEndpoints)
+        #self.handler = self.app.make_handler()
+        #self.server = self.server_loop.create_server(self.handler, self.ip, self.port)
+        #self.io_loop.run_in_executor(None, self.startRESTEndpoints)
+        web.run_app(self.app, host=self.ip, port=self.port)
         
     def startRESTEndpoints(self):
         print ('start rest endpoints')
@@ -150,9 +151,7 @@ class ClusterExecutorNode(object):
         
 if __name__=='__main__':
     print ('starting a ClusterExecutorNode...')
-    node = ClusterExecutorNode()
+    node = ClusterNode()
     node.boot('0.0.0.0', 9000)
-    node.add_existing_task({'a':1})
-    print (node.get_address())
     
     
