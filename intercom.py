@@ -7,6 +7,7 @@ Created on Sat Sep 23 18:37:52 2017
 """
 import requests 
 import json
+import pickleFunctions
 
 
 def get_request(location):
@@ -63,14 +64,20 @@ def post_string_message(server_ip, server_port, message):
 
 def post_task(server_ip, server_port, task):
     task_data = task.createDictionary()
-    location = location_assembler(server_ip, server_port, "/addJob")
+    location = location_assembler(server_ip, server_port, "/addTask")
     response = post_request(location, task_data)
     return parse_response(response)
 
-def get_node_counts(server_ip, server_port):
+def get_counts(server_ip, server_port):
     location = location_assembler(server_ip, server_port, "/counts")
     response = get_request(location)
     return parse_response(response)
+
+def get_task_list(server_ip, server_port):
+    location = location_assembler(server_ip, server_port, "/getTaskList")
+    response = get_request(location)
+    task_list = parse_response(response)
+    return pickleFunctions.unPickleListServer(task_list['data'])
 
 #def post_node_info_by_index(server_ip, server_port):
 

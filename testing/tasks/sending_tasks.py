@@ -33,8 +33,11 @@ def send_tasks():
         print ('sent a task...')
     
     time.sleep(1)
-    counts = intercom.get_node_counts('0.0.0.0', 9000)
+    counts = intercom.get_counts('0.0.0.0', 9000)
     print ('counts: ', counts)
+    
+    tasks = intercom.get_task_list('0.0.0.0', 9000)
+    print ('tasks: ', tasks)
     
     time.sleep(1)   
     print ('end of test')

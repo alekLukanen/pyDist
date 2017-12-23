@@ -52,6 +52,9 @@ class NodeInterface(object):
         self.num_queued = None
         self.jobs_sent = []
         
+    def get_signature(self):
+        return {'ip': self.ip, 'port': self.port, 'num_cores': self.num_cores}
+        
     def update_variables(self):
         location = location_assembler(self.ip, self.port, "/nodeCounts")
         response = get_request(location)

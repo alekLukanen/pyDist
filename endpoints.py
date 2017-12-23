@@ -15,8 +15,8 @@ async def index(request):
     print ('/')
     return web.Response(text='Hello Aiohttp!')
 
-async def addJob(request):
-    print ('/addJob')
+async def addTask(request):
+    print ('/addTask')
     task_data = json.loads( await request.text() )
     added = node.add_existing_task(task_data)
     if (added == True):
@@ -32,7 +32,10 @@ async def addStringMessage(request):
     return web.Response(text='got the message')
 
 async def counts(request):
-    print ('/nodeCounts')
+    print ('/counts')
     data = node.get_counts()
     return web.Response(body=data)
 
+async def getTaskList(request):
+    print ('getTaskList()')
+    return web.Response(body=node.get_task_list())

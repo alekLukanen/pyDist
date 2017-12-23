@@ -31,9 +31,6 @@ class ClusterNode(object):
         
         self.tasks = []
         
-        self.ip = '0.0.0.0'
-        self.port = 9000
-        
         self.node_id_tick = 0
         self.job_id_tick = 0
         
@@ -43,20 +40,28 @@ class ClusterNode(object):
         self.app = web.Application(loop=self.server_loop)
         self.app.router.add_route('GET', '/', endpoints.index)
         self.app.router.add_route('GET', '/counts', endpoints.counts)
-        self.app.router.add_route('POST', '/addJob', endpoints.addJob)
+        self.app.router.add_route('GET', '/getTaskList', endpoints.getTaskList)
+        self.app.router.add_route('POST', '/addTask', endpoints.addTask)
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
         
-    ###COUNTS CODE ####################    
+        
+    ###NODE INFO CODE ####################    
     def get_counts(self):
         num_cores = self.interface.num_cores
         num_tasks = len(self.tasks)
         dictionary = {'num_tasks': num_tasks, 'num_cores':num_cores}
         return json.dumps( dictionary )
+    
+    def get_task_list(self):
+        dictionary = {'data': pickleFunctions.pickleListServer(self.tasks)}
+        return json.dumps( dictionary )
     ###################################
         
     def boot(self, ip, port):
         endpoints.node = self #give the endpoints a reference to this object
-        web.run_app(self.app, host=self.ip, port=self.port)
+        self.interface.ip = ip
+        self.interface.port = port
+        web.run_app(self.app, host=self.interface.ip, port=self.interface.port)
         
     def increment_id_tick(self):
         self.node_id_tick+=1
@@ -65,19 +70,21 @@ class ClusterNode(object):
         self.job_id_tick+=1
         
     def get_address(self):
-        return "http://%s:%d" % (self.ip, self.port)
+        return "http://%s:%d" % (self.interface.ip, self.interface.port)
     
     ###TASK CODE ######################
-    def sign_taks(task_object):
-        
+    def sign_task(self, task_object):
+        task_object.cluster_trace.append(self.interface.get_signature())
     
     def add_existing_task_async(self, task_object):
         print ('adding_existing_task_async()')
+        self.sign_task(task_object)
         self.tasks.append(task_object)
     
     def add_existing_task(self, task):
         print ('add_existing_task')
-        future = self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task['data'])
+        task_object = pickleFunctions.unPickleServer(task['data'])
+        future = self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task_object)
         print (future)
         return True
     ####################################

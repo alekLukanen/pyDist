@@ -40,6 +40,19 @@ def createPickleServer(obj):
 
 def unPickleServer(data):
     return pickle.loads(data.encode('latin1'))
+
+def pickleListServer(data_list):
+    new_list = []
+    for item in data_list:
+        new_list.append(item.pickle())
+    return new_list
+
+def unPickleListServer(data_list):
+    new_list = []
+    for item in data_list:
+        new_list.append(unPickleServer(item))
+    return new_list
+
 #########################################
     
 def abc():
