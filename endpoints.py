@@ -12,11 +12,11 @@ import json
 node = None
 
 async def index(request):
-    print ('/')
+    print ('- /')
     return web.Response(text='Hello Aiohttp!')
 
 async def addTask(request):
-    print ('/addTask')
+    print ('- /addTask')
     task_data = json.loads( await request.text() )
     added = node.add_existing_task(task_data)
     if (added == True):
@@ -25,17 +25,16 @@ async def addTask(request):
         return web.Response(text='False')
 
 async def addStringMessage(request):
-    print ('/addStringMessage')
-    print ('raw message: ', await request.text())
+    print ('- /addStringMessage')
     message_data = json.loads( await request.text() )
     node.add_string_message(message_data)
     return web.Response(text='got the message')
 
 async def counts(request):
-    print ('/counts')
+    print ('- /counts')
     data = node.get_counts()
     return web.Response(body=data)
 
 async def getTaskList(request):
-    print ('getTaskList()')
+    print ('- /getTaskList')
     return web.Response(body=node.get_task_list())

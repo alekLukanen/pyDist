@@ -11,14 +11,19 @@ import Nodes
 import time
 import intercom
 import Tasks
+import concurrent
 
 from TaskManager import TaskManager
 
+#change these up for use in other cases
+taskManager = TaskManager()
+taskManager.executor = concurrent.futures.ThreadPoolExecutor(4)
+
 def start_node():
-    print ('starting the node (PROCESS MAIN)')
+    print ('+ starting the node (PROCESS MAIN)')
     node = Nodes.ClusterNode()
     node.boot('0.0.0.0', 9000)
-    print ('started node...')
+    print ('+ node stopped')
     
 def send_tasks():
     print ('sending messages (PROCESS 2)')
@@ -30,24 +35,27 @@ def send_tasks():
         t1 = Tasks.Task()
         t1.task_id = 'task_%d' % i
         intercom.post_task('0.0.0.0', 9000, t1)
-        print ('sent a task...')
+        print ('+ sent a task...')
     
+    print ('====Wait for Counts====')
     time.sleep(1)
     counts = intercom.get_counts('0.0.0.0', 9000)
-    print ('counts: ', counts)
+    print ('+ counts: ', counts)
     
     tasks = intercom.get_task_list('0.0.0.0', 9000)
-    print ('tasks: ', tasks)
+    print ('====Tasks====')
+    for task in tasks:
+        print ('+ task: ', task)
     
     time.sleep(1)   
-    print ('end of test')
-    exit()
+    print ('+ end of test')
 
 if __name__ == '__main__':
     print ('basic message test')
     
-    taskManager = TaskManager()
     taskManager.tasks.append(
                 taskManager.executor.submit(send_tasks,))
-    
-    start_node()
+    try:
+        start_node()
+    except KeyboardInterrupt:
+        print ('Ened the test...')

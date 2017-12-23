@@ -77,23 +77,22 @@ class ClusterNode(object):
         task_object.cluster_trace.append(self.interface.get_signature())
     
     def add_existing_task_async(self, task_object):
-        print ('adding_existing_task_async()')
+        print ('- adding_existing_task_async()')
         self.sign_task(task_object)
         self.tasks.append(task_object)
     
     def add_existing_task(self, task):
-        print ('add_existing_task')
+        print ('- add_existing_task()')
         task_object = pickleFunctions.unPickleServer(task['data'])
         future = self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task_object)
-        print (future)
         return True
     ####################################
     
     ###MESSAGE CODE ####################
     def add_string_message(self, message):
-        print ('add_message')
+        print ('- add_message()')
         msg = pickleFunctions.unPickleServer(message['data'])
-        print ('RECIEVED MESSAGE: ', msg)
+        print ('- RECIEVED MESSAGE: ', msg)
         
     #####################################
     
