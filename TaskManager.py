@@ -19,13 +19,14 @@ class TaskManager(object):
     #   self.tasks - the tasks submitted to the executor
     def __init__(self,):
         self.num_cores = multiprocessing.cpu_count()
+        self.num_running = 0
         self.executor = concurrent.futures.ProcessPoolExecutor(self.num_cores)
         
         self.tasks = []
         
     #subit the task to the executor and save task
     def submit(self, task):
-        self.tasks[self.executor.submit(task)]
+        self.tasks.append(task)
         
     #set the number of processes to be used by the executor
     #TO DO - need to get this to update the executor with new process count
@@ -38,6 +39,9 @@ class TaskManager(object):
         
     #a generator that returns tasks as completed. 
     def as_completed(self):
-        return concurrent.futures.as_completed(self.tasks)        
+        return concurrent.futures.as_completed(self.tasks) 
+
+    def running_minus_one(self):
+        self.num_running = self.num_running - 1
     
     

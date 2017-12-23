@@ -22,12 +22,19 @@ import NodeInterface
 import endpoints
 import Tasks
 import pickleFunctions    
+import TaskManager
 
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
 class ClusterNode(object):
     
     def __init__(self):
+        logging.basicConfig(format='%(filename)-20s:%(lineno)-3s | %(levelname)-8s | %(message)s'
+                , stream=sys.stdout, level=logging.DEBUG)
+        self.logger = logging.getLogger()
+        
         self.interface = NodeInterface.NodeInterface()
+        self.taskManager = TaskManager.TaskManager()
+        
         self.server_interfaces = []
         self.client_interfaces = []
         
@@ -45,10 +52,6 @@ class ClusterNode(object):
         self.app.router.add_route('GET', '/getTaskList', endpoints.getTaskList)
         self.app.router.add_route('POST', '/addTask', endpoints.addTask)
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
-        
-        logging.basicConfig(format='%(filename)-20s:%(lineno)-3s | %(levelname)-8s | %(message)s'
-                , stream=sys.stdout, level=logging.DEBUG)
-        self.logger = logging.getLogger()
         
         
     ###NODE INFO CODE ####################    
@@ -85,13 +88,26 @@ class ClusterNode(object):
     def add_existing_task_async(self, task_object):
         self.logger.debug('adding_existing_task_async()')
         self.sign_task(task_object)
+        
+        if (self.taskManager.num_running<self.taskManager.num_cores):
+            task_object.pickleFnOnly()
+            task = self.taskManager.executor.submit(Tasks.caller_helper, task_object)
+            task.add_done_callback(self.task_finished_callback)
+            self.taskManager.submit(task)
+        else:
+            self.logger.debug('task was not added because queue is already full')
         self.tasks.append(task_object)
     
     def add_existing_task(self, task):
         self.logger.debug('add_existing_task()')
         task_object = pickleFunctions.unPickleServer(task['data'])
-        future = self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task_object)
+        _ = self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task_object)
         return True
+    
+    def task_finished_callback(self, future):
+        self.logger.debug('task_finished_callback() result: %s' % future)
+        self.taskManager.running_minus_one()
+        
     ####################################
     
     ###MESSAGE CODE ####################

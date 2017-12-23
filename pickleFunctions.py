@@ -36,10 +36,10 @@ def unPickle(data):
 
 #functions used to create a server pickle
 def createPickleServer(obj):
-    return pickle.dumps(obj).decode('latin1')
+    return cloudpickle.dumps(obj).decode('latin1')
 
 def unPickleServer(data):
-    return pickle.loads(data.encode('latin1'))
+    return cloudpickle.loads(data.encode('latin1'))
 
 def pickleListServer(data_list):
     new_list = []
