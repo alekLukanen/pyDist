@@ -5,9 +5,10 @@ Created on Wed Nov  1 21:16:01 2017
 
 @author: lukanen
 """
-import NodeInterface
+import Interfaces
 import pickleFunctions
 import concurrent.futures
+import uuid
 
 #use this function to call the users function
 def caller_helper(task):
@@ -21,6 +22,7 @@ def caller_helper(task):
     
     #repickle the function
     task.pickleInnerData()
+    task.set_run()
     
     return task
     
@@ -48,19 +50,27 @@ class Task(object):
     def __init__(self):
         #concurrent.futures.Future.__init__(self)
         self.cluster_trace = []
-        self.task_id = None
+        self.task_id = uuid.uuid4()
+        self.user_id = None
+        self.group_id = None
         
+        self.flag = None
+        self.id = None
         self.fn = None
         self.args = ()
         self.kwargs = {}
         
-        self._result = None
+        self.__result = None
+        self.__run = False
         
     def result(self):
-        return self._result
+        return self.__result
     
     def set_result(self, result):
-        self._result = result
+        self.__result = result
+        
+    def set_run(self):
+        self.__run = True
         
     def pickleVariable(self, var):
         return pickleFunctions.createPickleServer(var)
@@ -72,13 +82,13 @@ class Task(object):
         self.fn = self.pickleVariable(self.fn)
         self.args = self.pickleVariable(self.args)
         self.kwargs = self.pickleVariable(self.kwargs)
-        self._result = self.pickleVariable(self._result)
+        self.__result = self.pickleVariable(self.__result)
     
     def unpickleInnerData(self):
         self.fn = self.unpickleVariable(self.fn)
         self.args = self.unpickleVariable(self.args)
         self.kwargs = self.unpickleVariable(self.kwargs)
-        self._result = self.unpickleVariable(self._result)
+        self.__result = self.unpickleVariable(self.__result)
     
     def pickle(self):
         return pickleFunctions.createPickleServer(self)

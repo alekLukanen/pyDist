@@ -9,6 +9,7 @@ Created on Wed Oct 25 16:03:08 2017
 import json
 import requests
 import logging
+import uuid
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("flask").setLevel(logging.WARNING)
@@ -45,6 +46,7 @@ def parse_response(response):
 class NodeInterface(object):
     
     def __init__(self):
+        self.node_id = uuid.uuid4()
         self.ip = None
         self.port = None
         self.num_cores = None

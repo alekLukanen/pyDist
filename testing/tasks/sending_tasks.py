@@ -21,7 +21,6 @@ from TaskManager import TaskManager
 taskManager = TaskManager()
 taskManager.executor = concurrent.futures.ThreadPoolExecutor(1)
 
-
 #logging utility
 logging.basicConfig(format='%(filename)-20s:%(lineno)-43s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
@@ -36,7 +35,7 @@ def start_node():
     return node
     
 def ex(a,b):
-    return True,a,b
+    return [True,a,b]
     
 def send_tasks():
     logger.debug('sending messages (PROCESS 2)')
@@ -47,7 +46,7 @@ def send_tasks():
     for i in range(0,3): #add three tasks
         t1 = Tasks.Task()
         t1.fn = ex
-        t1.args = (1,2)
+        t1.args = (i,2)
         t1.task_id = 'task_%d' % i
         intercom.post_task('0.0.0.0', 9000, t1)
         logger.debug('sent a task...')

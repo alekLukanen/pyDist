@@ -22,7 +22,14 @@ class TaskManager(object):
         self.num_running = 0
         self.executor = concurrent.futures.ProcessPoolExecutor(self.num_cores)
         
+        #futures object that contains the task
         self.tasks = []
+        
+        #these are the Task object themselves not
+        #the futures objects rapped around them.
+        self.user_tasks = []
+        self.queued_tasks = []
+        self.tasks_finished = []
         
     #subit the task to the executor and save task
     def submit(self, task):
@@ -43,5 +50,25 @@ class TaskManager(object):
 
     def running_minus_one(self):
         self.num_running = self.num_running - 1
+        
+    def add_finished_task(self, task):
+        self.queued_tasks.append(task)
+        
+    #update a task for viewing by the user 
+    def update_task_by_id(self, task):
+        for task_sub in self.user_tasks:
+            if (task_sub.task_id==task.task_id):
+                self.user_tasks.remove(task_sub)
+                self.user_tasks.append(task)
+                return True
+        return False
+    
+    def remove_task_from_task_list_by_id(self, task):
+        for future in self.tasks:
+            if (future.done()==True or future.running()==False):
+                if (future.result().task_id==task.task_id):
+                    self.tasks.remove(future)
+                    return True
+        return False
     
     

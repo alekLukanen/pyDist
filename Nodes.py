@@ -18,7 +18,7 @@ import json
 import logging
 import sys
 
-import NodeInterface
+import Interfaces
 import endpoints
 import Tasks
 import pickleFunctions    
@@ -33,16 +33,13 @@ class ClusterNode(object):
                 , stream=sys.stdout, level=logging.DEBUG)
         self.logger = logging.getLogger()
         
-        self.interface = NodeInterface.NodeInterface()
+        self.interface = Interfaces.NodeInterface()
         self.taskManager = TaskManager.TaskManager()
+        
+        self.user_interfaces = []
         
         self.server_interfaces = []
         self.client_interfaces = []
-        
-        self.tasks = []
-        
-        self.node_id_tick = 0
-        self.job_id_tick = 0
         
         self.server_loop = asyncio.get_event_loop()
         self.io_loop = asyncio.new_event_loop()
@@ -54,16 +51,18 @@ class ClusterNode(object):
         self.app.router.add_route('POST', '/addTask', endpoints.addTask)
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
         
-        
     ###NODE INFO CODE ####################    
     def get_counts(self):
         num_cores = self.interface.num_cores
-        num_tasks = len(self.tasks)
-        dictionary = {'num_tasks': num_tasks, 'num_cores':num_cores}
+        num_tasks_in_user_tasks = len(self.taskManager.user_tasks)
+        num_tasks_in_running_list = len(self.taskManager.tasks)
+        dictionary = {'num_tasks_in_user_tasks': num_tasks_in_user_tasks
+                      , 'num_tasks_in_running_array': num_tasks_in_running_list
+                      , 'num_cores':num_cores}
         return json.dumps( dictionary )
     
     def get_task_list(self):
-        dictionary = {'data': pickleFunctions.pickleListServer(self.tasks)}
+        dictionary = {'data': pickleFunctions.pickleListServer(self.taskManager.user_tasks)}
         return json.dumps( dictionary )
     ###################################
         
@@ -72,12 +71,6 @@ class ClusterNode(object):
         self.interface.ip = ip
         self.interface.port = port
         web.run_app(self.app, host=self.interface.ip, port=self.interface.port)
-        
-    def increment_id_tick(self):
-        self.node_id_tick+=1
-        
-    def increment_job_id_tick(self):
-        self.job_id_tick+=1
         
     def get_address(self):
         return "http://%s:%d" % (self.interface.ip, self.interface.port)
@@ -99,7 +92,7 @@ class ClusterNode(object):
             self.taskManager.submit(task)
         else:
             self.logger.debug('task was not added because queue is already full')
-        self.tasks.append(task_object)
+        self.taskManager.user_tasks.append(task_object)
     
     def add_existing_task(self, task):
         self.logger.debug('add_existing_task()')
@@ -109,7 +102,18 @@ class ClusterNode(object):
     
     def task_finished_callback(self, future):
         self.logger.debug('task_finished_callback() result: %s' % future)
+        #get the task from future and unpickle the inside of the task
+        returned_task = future.result()
+        returned_task.unpickleInnerData()
+        #here is where the taskmanager is udated based on the 
+        #tasks finished callback.
+        #subract one from the taskmanagers couter
+        #add a done result to the task
+        #update the task in user_tasks with the result
         self.taskManager.running_minus_one()
+        self.taskManager.add_finished_task(returned_task.task_id)
+        self.taskManager.update_task_by_id(returned_task)
+        self.taskManager.remove_task_from_task_list_by_id(returned_task)
         
     ####################################
     
