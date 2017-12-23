@@ -15,13 +15,15 @@ if (lp.is_closed()==True):
 
 from aiohttp import web
 import json
+import logging
+import sys
 
 import NodeInterface
 import endpoints
 import Tasks
-
 import pickleFunctions    
 
+logging.getLogger("aiohttp").setLevel(logging.WARNING)
 class ClusterNode(object):
     
     def __init__(self):
@@ -43,6 +45,10 @@ class ClusterNode(object):
         self.app.router.add_route('GET', '/getTaskList', endpoints.getTaskList)
         self.app.router.add_route('POST', '/addTask', endpoints.addTask)
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
+        
+        logging.basicConfig(format='%(filename)-20s:%(lineno)-3s | %(levelname)-8s | %(message)s'
+                , stream=sys.stdout, level=logging.DEBUG)
+        self.logger = logging.getLogger()
         
         
     ###NODE INFO CODE ####################    
@@ -77,12 +83,12 @@ class ClusterNode(object):
         task_object.cluster_trace.append(self.interface.get_signature())
     
     def add_existing_task_async(self, task_object):
-        print ('- adding_existing_task_async()')
+        self.logger.debug('adding_existing_task_async()')
         self.sign_task(task_object)
         self.tasks.append(task_object)
     
     def add_existing_task(self, task):
-        print ('- add_existing_task()')
+        self.logger.debug('add_existing_task()')
         task_object = pickleFunctions.unPickleServer(task['data'])
         future = self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task_object)
         return True
@@ -90,9 +96,9 @@ class ClusterNode(object):
     
     ###MESSAGE CODE ####################
     def add_string_message(self, message):
-        print ('- add_message()')
+        self.logger.debug('add_message()')
         msg = pickleFunctions.unPickleServer(message['data'])
-        print ('- RECIEVED MESSAGE: ', msg)
+        self.logger.debug('RECIEVED MESSAGE: ', msg)
         
     #####################################
     
@@ -103,13 +109,13 @@ class ClusterNode(object):
     def submit(self, fn, *args, **kwards):
         task = Tasks.Task()
         
-        print ('submit')
+        self.logger.debug('submit')
         
     def map(self, func, *iterables, timeout=None, chuncksize=1):
-        print ('map function')
+        self.logger.debug('map function')
         
     def shutdown(self, wait=True):
-        print ('shutdown()')
+        self.logger.debug('shutdown()')
         self.server_loop.call_soon_threadsafe(self.server_loop.stop)
     
     ##########################################
