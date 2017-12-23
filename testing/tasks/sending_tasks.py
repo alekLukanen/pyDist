@@ -26,10 +26,11 @@ def send_tasks():
     time.sleep(1.5)
     print ('sending the task...')
     #send a message to the node
-    t1 = Tasks.Task()
-    t1.task_id = 'task_1'
-    intercom.post_task('0.0.0.0', 9000, t1)
-    print ('sent the task...')
+    for i in range(0,3): #add three tasks
+        t1 = Tasks.Task()
+        t1.task_id = 'task_%d' % i
+        intercom.post_task('0.0.0.0', 9000, t1)
+        print ('sent a task...')
     
     time.sleep(1)
     counts = intercom.get_node_counts('0.0.0.0', 9000)
