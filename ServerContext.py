@@ -38,7 +38,7 @@ class ServerContext(object):
         self.server_ended_event = Event()
         self.server_ended_event.clear()
         
-        logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)s - %(funcName)20s() ] - %(message)s'
+        logging.basicConfig(format='%(filename)-20s:%(lineno)-3s|%(name)-7s|%(levelname)-5s| %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
         self.logger = logging.getLogger()
     

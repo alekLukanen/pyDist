@@ -26,12 +26,13 @@ import TaskManager
 
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
 logging.getLogger("asyncio").setLevel(logging.WARNING)
+logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
 class ClusterNode(object):
     
     def __init__(self):
-        logging.basicConfig(format='%(filename)-20s:%(lineno)-3s | %(levelname)-8s | %(message)s'
+        logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-6s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger(__name__)
         
         self.interface = Interfaces.NodeInterface()
         self.taskManager = TaskManager.TaskManager()
@@ -86,7 +87,7 @@ class ClusterNode(object):
         #always pickle inner task data here
         task_object.pickleInnerData()
         
-        if (self.taskManager.num_running<self.taskManager.num_cores):
+        if (len(self.taskManager.tasks)<self.taskManager.num_cores):
             task = self.taskManager.executor.submit(Tasks.caller_helper, task_object)
             task.add_done_callback(self.task_finished_callback)
             self.taskManager.submit(task)
@@ -97,7 +98,7 @@ class ClusterNode(object):
     def add_existing_task(self, task):
         self.logger.debug('add_existing_task()')
         task_object = pickleFunctions.unPickleServer(task['data'])
-        _ = self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task_object)
+        self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task_object)
         return True
     
     def task_finished_callback(self, future):
@@ -110,10 +111,15 @@ class ClusterNode(object):
         #subract one from the taskmanagers couter
         #add a done result to the task
         #update the task in user_tasks with the result
-        self.taskManager.running_minus_one()
+        #remove the future from the task list, this keeps the futures list small
         self.taskManager.add_finished_task(returned_task.task_id)
-        self.taskManager.update_task_by_id(returned_task)
-        self.taskManager.remove_task_from_task_list_by_id(returned_task)
+        t_updated = self.taskManager.update_task_by_id(returned_task)
+        t_removed = self.taskManager.remove_task_from_task_list_by_id(returned_task)
+        #show warning messages when necessary
+        if (t_updated!=True):
+            self.logger.warning('A TASK FAILED TO UPDATE')
+        if (t_removed!=True):
+            self.logger.warning('A FUTURE FAILED TO BE REMOVED')
         
     ####################################
     

@@ -12,14 +12,10 @@ import uuid
 
 #use this function to call the users function
 def caller_helper(task):
-    print ('caller_helper(%s)' % task)
-    
     #unpickle the users function here
     task.unpickleInnerData()
-    
     #call the users function
     task.set_result(task.fn(*task.args, **task.kwargs))
-    
     #repickle the function
     task.pickleInnerData()
     task.set_run()
@@ -62,12 +58,27 @@ class Task(object):
         
         self.__result = None
         self.__run = False
+        self.__exception = None
+        
+        self.__pickled_inner = False
+        
+    def pickled_inner(self):
+        return self.__pickled_inner
         
     def result(self):
         return self.__result
     
     def set_result(self, result):
         self.__result = result
+        
+    def exception(self):
+        return self.__exception
+        
+    def set_exception(self, exception):
+        self.__exception = exception
+        
+    def done(self):
+        return self.__run
         
     def set_run(self):
         self.__run = True
@@ -83,12 +94,14 @@ class Task(object):
         self.args = self.pickleVariable(self.args)
         self.kwargs = self.pickleVariable(self.kwargs)
         self.__result = self.pickleVariable(self.__result)
+        self.__pickled_inner = True
     
     def unpickleInnerData(self):
         self.fn = self.unpickleVariable(self.fn)
         self.args = self.unpickleVariable(self.args)
         self.kwargs = self.unpickleVariable(self.kwargs)
         self.__result = self.unpickleVariable(self.__result)
+        self.__pickled_inner = False
     
     def pickle(self):
         return pickleFunctions.createPickleServer(self)

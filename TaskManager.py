@@ -47,9 +47,6 @@ class TaskManager(object):
     #a generator that returns tasks as completed. 
     def as_completed(self):
         return concurrent.futures.as_completed(self.tasks) 
-
-    def running_minus_one(self):
-        self.num_running = self.num_running - 1
         
     def add_finished_task(self, task):
         self.queued_tasks.append(task)
