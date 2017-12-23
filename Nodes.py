@@ -43,18 +43,19 @@ class ClusterNode(object):
         
         self.app = web.Application(loop=self.server_loop)
         self.app.router.add_route('GET', '/', endpoints.index)
+        self.app.router.add_route('GET', '/counts', endpoints.counts)
         self.app.router.add_route('POST', '/addJob', endpoints.addJob)
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
+        
         
         self.handler = None
         self.server = None
         self.serverFuture = None
         
-    def get_node_counts(self):
+    def get_counts(self):
         num_cores = self.interface.num_cores
-        num_running = len(self.node_ref.jobManager.running_job_dictionary)
-        dictionary = {'num_cores':num_cores, 'num_running': num_running
-                      , 'num_queued': self.job_queue_count}
+        num_tasks = len(self.tasks)
+        dictionary = {'num_tasks': num_tasks, 'num_cores':num_cores}
         return json.dumps( dictionary )
         
     def boot(self, ip, port):
@@ -95,15 +96,14 @@ class ClusterNode(object):
     def get_address(self):
         return "http://%s:%d" % (self.ip, self.port)
     
-    async def add_existing_task_async(self, task_data):
-        task_object = Tasks.Task()
-        task_object.create_from_dictionary(task_data)
+    def add_existing_task_async(self, task_object):
+        print ('adding_existing_task_async()')
         self.tasks.append(task_object)
     
     def add_existing_task(self, task):
         print ('add_existing_task')
-        future = asyncio.run_coroutine_threadsafe(self.add_existing_task_async(task), self.loop)
-        future.result()
+        future = self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task['data'])
+        print (future)
         return True
     
     def add_string_message(self, message):

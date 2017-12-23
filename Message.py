@@ -37,7 +37,7 @@ class StackMessage(BaseMessage):
     
     def __str__(self):
         return ("len(data): %d, len(cluster_trace)" % (len(self.data),len(self.cluster_trace)))
-
+    
 class StringMessage(BaseMessage):
     
     def __init__(self, message=''):

@@ -39,12 +39,6 @@ def post_slave_node(server_ip, server_port, node):
     response = post_request(location, data)
     return parse_response(response)
 
-def post_job(server_ip, server_port, job):
-    job_data = job.convert_to_dictionary()
-    location = location_assembler(server_ip, server_port, "/addJob")
-    response = post_request(location, job_data)
-    return parse_response(response)
-
 
 def get_node_info(server_ip, server_port):
     location = location_assembler(server_ip, server_port, "/nodeInfo")
@@ -56,10 +50,26 @@ def close_server(server_ip, server_port):
     response = requests.get(location) 
     return response
 
+
+##############################
+##############################
+##############################
+
 def post_string_message(server_ip, server_port, message):
     message_data = message.createDictionary()
     location = location_assembler(server_ip, server_port, "/addStringMessage")
     response = post_request(location, message_data)
+    return parse_response(response)
+
+def post_task(server_ip, server_port, task):
+    task_data = task.createDictionary()
+    location = location_assembler(server_ip, server_port, "/addJob")
+    response = post_request(location, task_data)
+    return parse_response(response)
+
+def get_node_counts(server_ip, server_port):
+    location = location_assembler(server_ip, server_port, "/counts")
+    response = get_request(location)
     return parse_response(response)
 
 #def post_node_info_by_index(server_ip, server_port):
