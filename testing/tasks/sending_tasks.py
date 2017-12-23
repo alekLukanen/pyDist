@@ -19,7 +19,7 @@ from TaskManager import TaskManager
 
 #change these up for use in other cases
 taskManager = TaskManager()
-taskManager.executor = concurrent.futures.ThreadPoolExecutor(4)
+taskManager.executor = concurrent.futures.ThreadPoolExecutor(1)
 
 
 #logging utility
@@ -35,8 +35,8 @@ def start_node():
     logger.debug('node stopped')
     return node
     
-def ex():
-    return True
+def ex(a,b):
+    return True,a,b
     
 def send_tasks():
     logger.debug('sending messages (PROCESS 2)')
@@ -63,7 +63,7 @@ def send_tasks():
         logger.debug('task: %s' % task)
         logger.debug('task.result: %s' % task.result())
     
-    time.sleep(1)   
+    time.sleep(1)
     logger.debug('end of test')
 
 if __name__ == '__main__':
@@ -73,5 +73,7 @@ if __name__ == '__main__':
                 taskManager.executor.submit(send_tasks,))
     try:
         node = start_node()
-    except KeyboardInterrupt:
+    except Exception as e:
+        logger.debug('node.taskManager.tasks: %s' % node.taskManager.tasks)
+        logger.debug('node.taskManager.tasks[0].result().result(): %s' % node.taskManager.tasks[0].result().result())
         logger.debug('Ened the test...')

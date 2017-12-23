@@ -11,6 +11,7 @@ import json
 import logging
 import sys
 
+logging.getLogger("aiohttp").setLevel(logging.WARNING)
 logging.basicConfig(format='%(filename)-20s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger()

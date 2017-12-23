@@ -25,6 +25,7 @@ import pickleFunctions
 import TaskManager
 
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
+logging.getLogger("asyncio").setLevel(logging.WARNING)
 class ClusterNode(object):
     
     def __init__(self):
@@ -89,8 +90,10 @@ class ClusterNode(object):
         self.logger.debug('adding_existing_task_async()')
         self.sign_task(task_object)
         
+        #always pickle inner task data here
+        task_object.pickleInnerData()
+        
         if (self.taskManager.num_running<self.taskManager.num_cores):
-            task_object.pickleFnOnly()
             task = self.taskManager.executor.submit(Tasks.caller_helper, task_object)
             task.add_done_callback(self.task_finished_callback)
             self.taskManager.submit(task)

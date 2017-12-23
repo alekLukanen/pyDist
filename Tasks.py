@@ -14,13 +14,13 @@ def caller_helper(task):
     print ('caller_helper(%s)' % task)
     
     #unpickle the users function here
-    task.unpickleFnOnly()
+    task.unpickleInnerData()
     
     #call the users function
-    task.set_result(task.fn())
+    task.set_result(task.fn(*task.args, **task.kwargs))
     
     #repickle the function
-    task.pickleFnOnly()
+    task.pickleInnerData()
     
     return task
     
@@ -62,11 +62,23 @@ class Task(object):
     def set_result(self, result):
         self._result = result
         
-    def pickleFnOnly(self):
-        self.fn = pickleFunctions.createPickleServer(self.fn)
+    def pickleVariable(self, var):
+        return pickleFunctions.createPickleServer(var)
         
-    def unpickleFnOnly(self):
-        self.fn = pickleFunctions.unPickleServer(self.fn)
+    def unpickleVariable(self, var):
+        return pickleFunctions.unPickleServer(var)
+    
+    def pickleInnerData(self):
+        self.fn = self.pickleVariable(self.fn)
+        self.args = self.pickleVariable(self.args)
+        self.kwargs = self.pickleVariable(self.kwargs)
+        self._result = self.pickleVariable(self._result)
+    
+    def unpickleInnerData(self):
+        self.fn = self.unpickleVariable(self.fn)
+        self.args = self.unpickleVariable(self.args)
+        self.kwargs = self.unpickleVariable(self.kwargs)
+        self._result = self.unpickleVariable(self._result)
     
     def pickle(self):
         return pickleFunctions.createPickleServer(self)
