@@ -8,6 +8,10 @@ Created on Mon Nov  6 16:37:22 2017
 
 import concurrent.futures
 import multiprocessing
+import Tasks
+
+import logging
+import sys
 
 #this is a basic task manager object used
 #to contain the 
@@ -17,7 +21,12 @@ class TaskManager(object):
     #   self.num_cores - the number of cores in the computer
     #   self.executor - the process pool executor used by the manager
     #   self.tasks - the tasks submitted to the executor
-    def __init__(self,):
+    def __init__(self):
+        
+        logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
+                , stream=sys.stdout, level=logging.DEBUG)
+        self.logger = logging.getLogger(__name__)
+        
         self.num_cores = multiprocessing.cpu_count()
         self.num_running = 0
         self.executor = concurrent.futures.ProcessPoolExecutor(self.num_cores)
@@ -49,7 +58,7 @@ class TaskManager(object):
         return concurrent.futures.as_completed(self.tasks) 
         
     def add_finished_task(self, task):
-        self.queued_tasks.append(task)
+        self.tasks_finished.append(task)
         
     #update a task for viewing by the user 
     def update_task_by_id(self, task):
@@ -68,4 +77,15 @@ class TaskManager(object):
                     return True
         return False
     
+    def run_queued_task(self, node):
+        if (len(self.queued_tasks)>0):
+            task_object = self.queued_tasks.pop()
+            self.logger.debug('task_object %s' % task_object)
+            task = self.executor.submit(Tasks.caller_helper, task_object)
+            task.add_done_callback(node.task_finished_callback)
+            self.submit(task)
+            self.user_tasks.append(task_object)
+            return True
+        else:
+            return False
     

@@ -30,7 +30,7 @@ logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
 class ClusterNode(object):
     
     def __init__(self):
-        logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-6s | %(message)s'
+        logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
         self.logger = logging.getLogger(__name__)
         
@@ -86,14 +86,17 @@ class ClusterNode(object):
         
         #always pickle inner task data here
         task_object.pickleInnerData()
+        self.logger.debug('task_object %s' % task_object)
         
         if (len(self.taskManager.tasks)<self.taskManager.num_cores):
             task = self.taskManager.executor.submit(Tasks.caller_helper, task_object)
             task.add_done_callback(self.task_finished_callback)
             self.taskManager.submit(task)
+            self.taskManager.user_tasks.append(task_object)
+            self.logger.debug('task_object: %s' % task_object)
         else:
+            self.taskManager.queued_tasks.append(task_object)
             self.logger.debug('task was not added because queue is already full')
-        self.taskManager.user_tasks.append(task_object)
     
     def add_existing_task(self, task):
         self.logger.debug('add_existing_task()')
@@ -115,11 +118,14 @@ class ClusterNode(object):
         self.taskManager.add_finished_task(returned_task.task_id)
         t_updated = self.taskManager.update_task_by_id(returned_task)
         t_removed = self.taskManager.remove_task_from_task_list_by_id(returned_task)
+        t_added   = self.taskManager.run_queued_task(self)
         #show warning messages when necessary
-        if (t_updated!=True):
+        if (t_updated==False):
             self.logger.warning('A TASK FAILED TO UPDATE')
-        if (t_removed!=True):
+        if (t_removed==False):
             self.logger.warning('A FUTURE FAILED TO BE REMOVED')
+        if (t_added==False):
+            self.logger.debug('TASK NOT RUN FROM QUEUED TASKS')
         
     ####################################
     

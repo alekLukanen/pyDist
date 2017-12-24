@@ -22,9 +22,9 @@ taskManager = TaskManager()
 taskManager.executor = concurrent.futures.ThreadPoolExecutor(1)
 
 #logging utility
-logging.getLogger("Nodes").setLevel(logging.WARNING)
+#logging.getLogger("Nodes").setLevel(logging.WARNING)
 logging.getLogger("endpoints").setLevel(logging.WARNING)
-logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-6s | %(message)s'
+logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ def send_tasks(tasks_needed):
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 25
+    tasks_needed = 5
     taskManager.tasks.append(
                 taskManager.executor.submit(send_tasks,tasks_needed))
     try:

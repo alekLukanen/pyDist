@@ -11,7 +11,7 @@ import json
 import logging
 import sys
 
-logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-6s | %(message)s'
+logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
