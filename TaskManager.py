@@ -80,7 +80,7 @@ class TaskManager(object):
     def run_queued_task(self, node):
         if (len(self.queued_tasks)>0):
             task_object = self.queued_tasks.pop()
-            self.logger.debug('task_object %s' % task_object)
+            self.logger.debug('running queued task: %s' % task_object.task_id)
             task = self.executor.submit(Tasks.caller_helper, task_object)
             task.add_done_callback(node.task_finished_callback)
             self.submit(task)

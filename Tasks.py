@@ -115,7 +115,8 @@ class Task(object):
         return None
     
     def __str__(self):
-        return ("task_id: %s, cluster_trace: %s" % (self.task_id, self.cluster_trace))
+        return ("task_id: %s, id(userDef): %s, cluster_trace: %s" 
+                % (self.task_id, self.id, self.cluster_trace))
     
 if __name__ == '__main__':
     task = Task()

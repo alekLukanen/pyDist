@@ -23,12 +23,9 @@ async def index(request):
 
 async def addTask(request):
     logger.debug('/addTask')
-    task_data = json.loads( await request.text() )
-    added = node.add_existing_task(task_data)
-    if (added == True):
-        return web.Response(text='True')
-    else:
-        return web.Response(text='False')
+    request_data = json.loads( await request.text() )
+    data = node.add_existing_task(request_data)
+    return web.Response(body=data)
 
 async def addStringMessage(request):
     logger.debug('/addStringMessage')
@@ -41,6 +38,17 @@ async def counts(request):
     data = node.get_counts()
     return web.Response(body=data)
 
+async def nodeInfo(request):
+    logger.debug('/nodeInfo')
+    data = node.get_info()
+    return web.Response(body=data)
+
 async def getTaskList(request):
     logger.debug('/getTaskList')
     return web.Response(body=node.get_task_list())
+
+async def connectUser(request):
+    logger.debug('/connectUser')
+    connection_data = json.loads( await request.text() )
+    response_data = node.connect_user(connection_data)
+    return web.Response(body=response_data)

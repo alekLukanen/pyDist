@@ -36,6 +36,9 @@ class ClusterNode(object):
         
         self.interface = Interfaces.NodeInterface()
         self.taskManager = TaskManager.TaskManager()
+        self.interface.num_cores = self.taskManager.num_cores
+        self.interface.num_running = 0
+        self.interface.num_queued = 0
         
         self.user_interfaces = []
         
@@ -45,22 +48,49 @@ class ClusterNode(object):
         self.server_loop = asyncio.get_event_loop()
         self.io_loop = asyncio.new_event_loop()
         
+        self.task_added = True
+        
         self.app = web.Application(loop=self.server_loop)
         self.app.router.add_route('GET', '/', endpoints.index)
         self.app.router.add_route('GET', '/counts', endpoints.counts)
+        self.app.router.add_route('GET', '/nodeInfo', endpoints.nodeInfo)
         self.app.router.add_route('GET', '/getTaskList', endpoints.getTaskList)
         self.app.router.add_route('POST', '/addTask', endpoints.addTask)
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
+        self.app.router.add_route('POST', '/connectUser', endpoints.connectUser)
+        
+    ###USER INTERACTION CODE##############
+    def connect_user(self, user_data):
+        user_interface = self.find_user_by_user_id(user_data['user_id'])
+        if (user_interface==None):
+            user_interface = Interfaces.UserInterface(user_data['user_id'], user_data['group_id'])
+            self.user_interfaces.append(user_interface)
+            return json.dumps( {'connected': True} )
+        else:
+            return json.dumps( {'connected': True} )
+    
+    def find_user_by_user_id(self, user_id):
+        for user in self.user_interfaces:
+            if (user.user_id==user_id):
+                return user
+        return None
+    
+    ######################################
         
     ###NODE INFO CODE ####################    
     def get_counts(self):
-        num_cores = self.interface.num_cores
+        num_cores = self.taskManager.num_cores
         num_tasks_in_user_tasks = len(self.taskManager.user_tasks)
         num_tasks_in_running_list = len(self.taskManager.tasks)
-        dictionary = {'num_tasks_in_user_tasks': num_tasks_in_user_tasks
-                      , 'num_tasks_in_running_array': num_tasks_in_running_list
+        num_tasks_in_queue_list = len(self.taskManager.queued_tasks)
+        dictionary = {'num_user_tasks': num_tasks_in_user_tasks
+                      , 'num_tasks_running': num_tasks_in_running_list
+                      , 'num_tasks_queue': num_tasks_in_queue_list
                       , 'num_cores':num_cores}
         return json.dumps( dictionary )
+    
+    def get_info(self):
+        return json.dumps( self.interface.info() )
     
     def get_task_list(self):
         dictionary = {'data': pickleFunctions.pickleListServer(self.taskManager.user_tasks)}
@@ -80,13 +110,24 @@ class ClusterNode(object):
     def sign_task(self, task_object):
         task_object.cluster_trace.append(self.interface.get_signature())
     
-    def add_existing_task_async(self, task_object):
+    def add_existing_task_async(self, task):
         self.logger.debug('adding_existing_task_async()')
-        self.sign_task(task_object)
+        task_object = pickleFunctions.unPickleServer(task['data'])
         
         #always pickle inner task data here
         task_object.pickleInnerData()
         self.logger.debug('task_object %s' % task_object)
+        
+        #add the task to the users submitted tasks array
+        user = self.find_user_by_user_id(task['user_id'])
+        if (user!=None):
+            task_object.user_id = task['user_id']
+            task_object.group_id = task['group_id']
+            user.tasks_recieved.append(task_object)
+        else:
+            self.logger.warning('THE USER DOES NOT EXIST, TASK NOT ADDED')
+            self.task_added = False
+            return
         
         if (len(self.taskManager.tasks)<self.taskManager.num_cores):
             task = self.taskManager.executor.submit(Tasks.caller_helper, task_object)
@@ -97,12 +138,13 @@ class ClusterNode(object):
         else:
             self.taskManager.queued_tasks.append(task_object)
             self.logger.debug('task was not added because queue is already full')
+        self.task_added = True
+        return
     
     def add_existing_task(self, task):
         self.logger.debug('add_existing_task()')
-        task_object = pickleFunctions.unPickleServer(task['data'])
-        self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task_object)
-        return True
+        self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task)
+        return json.dumps( {'task_added': self.task_added} )
     
     def task_finished_callback(self, future):
         self.logger.debug('task_finished_callback() result: %s' % future)

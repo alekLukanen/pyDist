@@ -15,6 +15,7 @@ import concurrent
 import logging
 import sys
 
+import Interfaces
 from TaskManager import TaskManager
 
 #change these up for use in other cases
@@ -37,26 +38,29 @@ def start_node():
     return node
     
 def ex(a,b):
-    time.sleep(0.5)
+    time.sleep(0.01)
     return [True,a,b]
     
 def send_tasks(tasks_needed):
     logger.debug('sending messages (PROCESS 2)')
     
     time.sleep(1.5)
+    cluster = Interfaces.ClusterExecutor('0.0.0.0', 9000)
+    cluster.connect('testing_user')
+    
     logger.debug('sending the task...')
     #send a message to the node
     for i in range(0,tasks_needed): #add three tasks
         t1 = Tasks.Task()
         t1.fn = ex
         t1.args = (i,2)
-        t1.task_id = 'task_%d' % i
-        intercom.post_task('0.0.0.0', 9000, t1)
-        logger.debug('sent a task...')
-    
+        t1.id = 'task_%d' % i
+        added = cluster.add_task(t1)
+        logger.debug('task added: %s' % added)
+    logger.debug('sent %d tasks' % tasks_needed)
     logger.debug('====Wait for Counts====')
     time.sleep(1)
-    counts = intercom.get_counts('0.0.0.0', 9000)
+    counts = cluster.update_counts()
     logger.debug('counts: %s' % counts)
     
     tasks = intercom.get_task_list('0.0.0.0', 9000)
@@ -78,7 +82,7 @@ def send_tasks(tasks_needed):
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 5
+    tasks_needed = 4
     taskManager.tasks.append(
                 taskManager.executor.submit(send_tasks,tasks_needed))
     try:

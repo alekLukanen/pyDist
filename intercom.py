@@ -39,12 +39,6 @@ def post_slave_node(server_ip, server_port, node):
     location = location_assembler(server_ip, server_port, "/addSlaveNode")
     response = post_request(location, data)
     return parse_response(response)
-
-
-def get_node_info(server_ip, server_port):
-    location = location_assembler(server_ip, server_port, "/nodeInfo")
-    response = get_request(location)
-    return parse_response(response)
     
 def close_server(server_ip, server_port):
     location = location_assembler(server_ip, server_port, "/shutdown")
@@ -55,29 +49,41 @@ def close_server(server_ip, server_port):
 ##############################
 ##############################
 ##############################
-
-def post_string_message(server_ip, server_port, message):
+    
+def post_string_message(server_ip, server_port, message, params={}):
     message_data = message.createDictionary()
+    message_data.update(params)
     location = location_assembler(server_ip, server_port, "/addStringMessage")
     response = post_request(location, message_data)
     return parse_response(response)
 
-def post_task(server_ip, server_port, task):
+def post_task(server_ip, server_port, task, params={}):
     task_data = task.createDictionary()
+    task_data.update(params)
     location = location_assembler(server_ip, server_port, "/addTask")
     response = post_request(location, task_data)
     return parse_response(response)
 
-def get_counts(server_ip, server_port):
+def get_counts(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/counts")
     response = get_request(location)
     return parse_response(response)
 
-def get_task_list(server_ip, server_port):
+def get_node_info(server_ip, server_port, params={}):
+    location = location_assembler(server_ip, server_port, "/nodeInfo")
+    response = get_request(location)
+    return parse_response(response)
+
+def get_task_list(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/getTaskList")
     response = get_request(location)
     task_list = parse_response(response)
     return pickleFunctions.unPickleListServer(task_list['data'])
+
+def connect_user(server_ip, server_port, params={}):
+    location = location_assembler(server_ip, server_port, "/connectUser")
+    response = post_request(location, params)
+    return parse_response(response)
 
 #def post_node_info_by_index(server_ip, server_port):
 
