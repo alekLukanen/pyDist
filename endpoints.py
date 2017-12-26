@@ -45,10 +45,12 @@ async def nodeInfo(request):
 
 async def getTaskList(request):
     logger.debug('/getTaskList')
-    return web.Response(body=node.get_task_list())
+    params = request.rel_url.query
+    tasks_finished = node.get_tasks_finished(params)
+    return web.Response(body=tasks_finished)
 
 async def connectUser(request):
     logger.debug('/connectUser')
     connection_data = json.loads( await request.text() )
-    response_data = node.connect_user(connection_data)
+    response_data = node.interfaces.connect_user(connection_data)
     return web.Response(body=response_data)

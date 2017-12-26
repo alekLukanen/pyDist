@@ -8,19 +8,92 @@ Created on Wed Oct 25 16:03:08 2017
 
 import json
 import uuid
+import logging
+import sys
 
+import pickleFunctions
 import intercom
+
+class InterfaceHolder(object):
+    
+    def __init__(self):
+        logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
+                , stream=sys.stdout, level=logging.DEBUG)
+        self.logger = logging.getLogger(__name__)
+        
+        self.user_interfaces = []
+        self.server_interfaces = []
+        self.client_interfaces = []
+        
+    def connect_user(self, user_data):
+        self.logger.debug('connecting user: %s' % user_data)
+        user_interface = self.find_user_by_user_id(user_data['user_id'])
+        if (user_interface==None):
+            user_interface = UserInterface(user_data['user_id'], user_data['group_id'])
+            self.user_interfaces.append(user_interface)
+            return json.dumps( {'connected': True} )
+        else:
+            return json.dumps( {'connected': True} )
+        
+    def find_user_by_user_id(self, user_id):
+        for user in self.user_interfaces:
+            if (user.user_id==user_id):
+                return user
+        return None
+        
+    def find_user_task(self):
+        for user in self.user_interfaces:
+            if (len(user.tasks_recieved)>0):
+                #run a task
+                task = user.tasks_recieved.pop()
+                return user, task
+        return None, None
+    
+    def update_task_in_user(self, task):
+        for user in self.user_interfaces:
+            if (user.interface_id==task.interface_id):
+                user.tasks_running.remove(task.task_id)
+                user.tasks_finished.append(task)
+                self.remove_task_in_user_by_task_id(user, task.task_id)
+                return True
+        return False
+    
+    def find_user_by_interface_id(self, interface_id):
+        for user in self.user_interfaces:
+            if (user.interface_id==interface_id):
+                return user
+        return None
+    
+    def remove_task_in_user_by_task_id(self, user, task_id):
+        for task_rec in user.tasks_recieved:
+            if (task_rec.task_id == task_id):
+                user.tasks_reieved.remove(task_rec)
+    
+    def __str__(self):
+        return ('#users: %d, #servers: %d, #clients: %d' 
+                % (len(self.user_interfaces)
+                , len(self.server_interfaces)
+                , len(self.client_interfaces)))
 
 class UserInterface(object):
     
     def __init__(self, user_id, group_id):
+        self.interface_id = uuid.uuid4()
         self.user_id = user_id
         self.group_id = group_id
         self.tasks_recieved = []
+        self.tasks_running  = []
         self.tasks_finished = []
+       
+    def counts(self):
+        return ('#recv: %d, #running: %d, #fin: %d' 
+                % (len(self.tasks_recieved)
+                , len(self.tasks_running)
+                , len(self.tasks_finished)))
         
-    def __str__(self):
-        return ('user_id: %s, group_id: %s' % (self.user_id, self.group_id))
+    def __str__(self): 
+        return ('user_id: %s, group_id: %s' 
+               % (self.user_id, self.group_id))
     
 
 class NodeInterface(object):
@@ -64,7 +137,7 @@ class NodeInterface(object):
     
     def add_task(self, task):
         response = intercom.post_task(self.ip, self.port, task, params=self.params)
-        if (response['task_added']=='True'):
+        if (response['task_added']==True):
             self.tasks_sent.append(task)
             return True
         else:

@@ -48,6 +48,8 @@ def send_tasks(tasks_needed):
     cluster = Interfaces.ClusterExecutor('0.0.0.0', 9000)
     cluster.connect('testing_user')
     
+    params={'user_id': 'testing_user'}
+    
     logger.debug('sending the task...')
     #send a message to the node
     for i in range(0,tasks_needed): #add three tasks
@@ -63,13 +65,13 @@ def send_tasks(tasks_needed):
     counts = cluster.update_counts()
     logger.debug('counts: %s' % counts)
     
-    tasks = intercom.get_task_list('0.0.0.0', 9000)
+    tasks = intercom.get_task_list('0.0.0.0', 9000, params=params)
     logger.debug('====Tasks====')
     task_count_conf = 0
     for task in tasks:
         logger.debug('task: %s' % task)
         if (task.pickled_inner()): task.unpickleInnerData()
-        logger.debug('task.result: %s' % task.result())
+        #logger.debug('task.result: %s' % task.result())
         if (task.done()):
             task_count_conf += 1
         
@@ -82,7 +84,7 @@ def send_tasks(tasks_needed):
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 4
+    tasks_needed = 3
     taskManager.tasks.append(
                 taskManager.executor.submit(send_tasks,tasks_needed))
     try:

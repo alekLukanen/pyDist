@@ -47,8 +47,7 @@ class Task(object):
         #concurrent.futures.Future.__init__(self)
         self.cluster_trace = []
         self.task_id = uuid.uuid4()
-        self.user_id = None
-        self.group_id = None
+        self.interface_id = None
         
         self.flag = None
         self.id = None
@@ -61,6 +60,20 @@ class Task(object):
         self.__exception = None
         
         self.__pickled_inner = False
+        
+    def update(self, task):
+        self.cluster_trace = task.cluster_trace
+        self.task_id = task.task_id
+        self.interface_id = task.interface_id
+        self.flag = task.flag
+        self.id = task.id
+        self.fn = task.fn
+        self.args = task.args
+        self.kwargs = task.kwargs
+        self.__result = task.__result
+        self.__run = task.__run
+        self.__exception = task.__exception
+        self.__pickled_inner = task.__pickled_inner
         
     def pickled_inner(self):
         return self.__pickled_inner
@@ -90,18 +103,20 @@ class Task(object):
         return pickleFunctions.unPickleServer(var)
     
     def pickleInnerData(self):
-        self.fn = self.pickleVariable(self.fn)
-        self.args = self.pickleVariable(self.args)
-        self.kwargs = self.pickleVariable(self.kwargs)
-        self.__result = self.pickleVariable(self.__result)
-        self.__pickled_inner = True
+        if (self.__pickled_inner==False):
+            self.fn = self.pickleVariable(self.fn)
+            self.args = self.pickleVariable(self.args)
+            self.kwargs = self.pickleVariable(self.kwargs)
+            self.__result = self.pickleVariable(self.__result)
+            self.__pickled_inner = True
     
     def unpickleInnerData(self):
-        self.fn = self.unpickleVariable(self.fn)
-        self.args = self.unpickleVariable(self.args)
-        self.kwargs = self.unpickleVariable(self.kwargs)
-        self.__result = self.unpickleVariable(self.__result)
-        self.__pickled_inner = False
+        if (self.__pickled_inner==True):
+            self.fn = self.unpickleVariable(self.fn)
+            self.args = self.unpickleVariable(self.args)
+            self.kwargs = self.unpickleVariable(self.kwargs)
+            self.__result = self.unpickleVariable(self.__result)
+            self.__pickled_inner = False
     
     def pickle(self):
         return pickleFunctions.createPickleServer(self)
@@ -115,8 +130,8 @@ class Task(object):
         return None
     
     def __str__(self):
-        return ("task_id: %s, id(userDef): %s, cluster_trace: %s" 
-                % (self.task_id, self.id, self.cluster_trace))
+        return ("task_id: %s, interface_id: %s, id(userDef): %s, cluster_trace: %s" 
+                % (self.task_id, self.interface_id, self.id, self.cluster_trace))
     
 if __name__ == '__main__':
     task = Task()
