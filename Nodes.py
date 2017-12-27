@@ -179,10 +179,8 @@ class ClusterNode(object):
         #add a done result to the task
         #update the task in user_tasks with the result
         #remove the future from the task list, this keeps the futures list small
-        #self.taskManager.add_finished_task(returned_task.task_id)
         t_updated = self.interfaces.update_task_in_user(returned_task) #self.taskManager.update_task_by_id(returned_task)
         t_removed = self.taskManager.remove_task_from_task_list_by_id(returned_task)
-        #t_added   = self.taskManager.run_queued_task(self)
         t_added   = self.run_task_from_user()
         #show warning messages when necessary
         self.logger.debug('user.counts(): %s' 
@@ -203,24 +201,6 @@ class ClusterNode(object):
         self.logger.debug('RECIEVED MESSAGE: ', msg)
         
     #####################################
-    
-    #EXECUTOR METHODS HERE####################
-    
-    #submit a new job here
-    #this is where a new task needs to be created
-    def submit(self, fn, *args, **kwards):
-        task = Tasks.Task()
-        
-        self.logger.debug('submit')
-        
-    def map(self, func, *iterables, timeout=None, chuncksize=1):
-        self.logger.debug('map function')
-        
-    def shutdown(self, wait=True):
-        self.logger.debug('shutdown()')
-        self.server_loop.call_soon_threadsafe(self.server_loop.stop)
-    
-    ##########################################
     
     
         

@@ -13,6 +13,7 @@ import sys
 
 import pickleFunctions
 import intercom
+import Tasks
 
 class InterfaceHolder(object):
     
@@ -150,6 +151,7 @@ class NodeInterface(object):
         return self.num_running
     
 
+#based on the NodeInterface class
 class ClusterExecutor(NodeInterface):
     
     def __init__(self, ip, port):
@@ -158,7 +160,6 @@ class ClusterExecutor(NodeInterface):
         self.port = port
         self.user_id = None
         self.group_id = None
-        self.params = {}
         
     def connect(self, user_id, group_id='base'):
         response = intercom.connect_user(self.ip, self.port
@@ -170,6 +171,27 @@ class ClusterExecutor(NodeInterface):
             return True
         else:
             return False
+        
+    #EXECUTOR METHODS HERE####################
+    
+    #submit a new job here
+    #this is where a new task needs to be created
+    def submit(self, fn, *args, **kwargs):
+        task = Tasks.Task()
+        task.fn = fn
+        task.args = args
+        task.kwargs = kwargs
+        self.add_task(task)
+        return task
+        
+    def map(self, func, *iterables, timeout=None, chuncksize=1):
+        self.logger.debug('map function')
+        
+    def shutdown(self, wait=True):
+        self.logger.debug('shutdown()')
+        self.server_loop.call_soon_threadsafe(self.server_loop.stop)
+    
+    ##########################################
         
     def get_finished_task_list(self):
         response = intercom.get_finished_task_list(self.ip, self.port

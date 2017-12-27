@@ -53,11 +53,12 @@ def send_tasks(tasks_needed):
     logger.debug('sending the task...')
     #send a message to the node
     for i in range(0,tasks_needed): #add three tasks
-        t1 = Tasks.Task()
-        t1.fn = ex
-        t1.args = (i,2)
-        t1.id = 'task_%d' % i
-        added = cluster.add_task(t1)
+        added = cluster.submit(ex, i,2)
+        #t1 = Tasks.Task()
+        #t1.fn = ex
+        #t1.args = (i,2)
+        #t1.id = 'task_%d' % i
+        #added = cluster.add_task(t1)
         logger.debug('task added: %s' % added)
     logger.debug('sent %d tasks' % tasks_needed)
     logger.debug('====Wait for Counts====')
