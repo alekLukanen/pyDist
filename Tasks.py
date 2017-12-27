@@ -89,7 +89,6 @@ class Task(concurrent.futures._base.Future):
         self._exception = None
         self._waiters = []
         self._done_callbacks = []
-        
         self._pickled_inner = False
         
     def update(self, task):

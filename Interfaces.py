@@ -197,6 +197,16 @@ class ClusterExecutor(NodeInterface):
         response = intercom.get_finished_task_list(self.ip, self.port
                                         , params=self.params)
         return response
+    
+    def update_tasks_sent(self):
+        response = self.get_finished_task_list()
+        for task in response:
+            task.unpickleInnerData()
+            task.new_condition()
+            for task_sent in self.tasks_sent:
+                if (task_sent.task_id==task.task_id):
+                    task_sent.update(task)
+                    break
         
     def __str__(self):
         return ('ip: %s, port: %s, user_id: %s, group_id: %s' 

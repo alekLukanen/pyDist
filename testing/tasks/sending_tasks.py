@@ -60,21 +60,14 @@ def send_tasks(tasks_needed):
     counts = cluster.update_counts()
     logger.debug('counts: %s' % counts)
     
-    tasks = cluster.get_finished_task_list()
     logger.debug('====Tasks====')
+    cluster.update_tasks_sent()        
+    gen = concurrent.futures.as_completed(cluster.tasks_sent)
+    
     task_count_conf = 0
-    for task in tasks:
-        logger.debug('task: %s' % task)
-        task.unpickleInnerData()
-        task.new_condition()
-        #logger.debug('task.result: %s' % task.result())
-        if (task.done()):
-            task_count_conf += 1
-            
-    gen = concurrent.futures.as_completed(tasks)
-    logger.debug("tasks[0]._waiters: %s" % tasks[0]._waiters)
     for task_sub in gen:
         logger.debug('task_sub: %s' % task_sub)
+        task_count_conf += 1
         
     logger.info('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, SUCCESS: %s\x1b[0m' % 
                 (tasks_needed, task_count_conf, (tasks_needed==task_count_conf)))
