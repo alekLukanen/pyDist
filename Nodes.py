@@ -52,6 +52,7 @@ class ClusterNode(object):
         self.app.router.add_route('GET', '/counts', endpoints.counts)
         self.app.router.add_route('GET', '/nodeInfo', endpoints.nodeInfo)
         self.app.router.add_route('GET', '/getFinishedTaskList', endpoints.getFinishedTaskList)
+        self.app.router.add_route('GET', '/getSingleTask', endpoints.getSingleTask)
         self.app.router.add_route('POST', '/addTask', endpoints.addTask)
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
         self.app.router.add_route('POST', '/connectUser', endpoints.connectUser)
@@ -80,6 +81,24 @@ class ClusterNode(object):
             return json.dumps( dictionary )
         else:
             return json.dumps( {'data': [], 'error': 'no user for that user_id'} )
+        
+    async def get_a_finished_task(self, params):
+        user = self.interfaces.find_user_by_user_id(params['user_id'])
+        if (user!=None):
+            await self.server_loop.run_in_executor(None
+                    , self.interfaces.wait_for_first_finished_task_for_user, user)
+            task = self.interfaces.find_finished_task_for_user(user)
+            self.interfaces.reset_finished_event_for_user(user)
+            if (task!=None):
+                dictionary = {'data': task.pickle()}
+                self.logger.debug('dictionary: %s' % dictionary)
+                return json.dumps( dictionary )
+            else:
+                self.logger.warning('the task was of Nonetype')
+                return json.dumps( {'data': None, 'error': 'task was none'} )
+        else:
+            return json.dumps( {'data': None, 'error': 'no user for that user_id'} )
+        
     ###################################
         
     def boot(self, ip, port):
@@ -173,6 +192,7 @@ class ClusterNode(object):
         #get the task from future and unpickle the inside of the task
         returned_task = future.result()
         returned_task.unpickleInnerData()
+        returned_task.new_condition()
         #here is where the taskmanager is udated based on the 
         #tasks finished callback.
         #subract one from the taskmanagers couter

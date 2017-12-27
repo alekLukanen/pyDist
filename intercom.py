@@ -80,6 +80,12 @@ def get_finished_task_list(server_ip, server_port, params={}):
     task_list = parse_response(response)
     return pickleFunctions.unPickleListServer(task_list['data'])
 
+def get_single_task(server_ip, server_port, params={}):
+    location = location_assembler(server_ip, server_port, "/getSingleTask")
+    response = get_request(location, params)
+    task = parse_response(response)
+    return pickleFunctions.unPickleServer(task['data'])
+
 def connect_user(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/connectUser")
     response = post_request(location, params)

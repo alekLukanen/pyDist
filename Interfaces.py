@@ -10,10 +10,13 @@ import json
 import uuid
 import logging
 import sys
+import threading
 
 import pickleFunctions
 import intercom
 import Tasks
+
+import concurrent.futures
 
 class InterfaceHolder(object):
     
@@ -26,15 +29,18 @@ class InterfaceHolder(object):
         self.server_interfaces = []
         self.client_interfaces = []
         
+        self._condition = threading.Condition()
+        
     def connect_user(self, user_data):
-        self.logger.debug('connecting user: %s' % user_data)
-        user_interface = self.find_user_by_user_id(user_data['user_id'])
-        if (user_interface==None):
-            user_interface = UserInterface(user_data['user_id'], user_data['group_id'])
-            self.user_interfaces.append(user_interface)
-            return json.dumps( {'connected': True} )
-        else:
-            return json.dumps( {'connected': True} )
+        with self._condition:
+            self.logger.debug('connecting user: %s' % user_data)
+            user_interface = self.find_user_by_user_id(user_data['user_id'])
+            if (user_interface==None):
+                user_interface = UserInterface(user_data['user_id'], user_data['group_id'])
+                self.user_interfaces.append(user_interface)
+                return json.dumps( {'connected': True} )
+            else:
+                return json.dumps( {'connected': True} )
         
     def find_user_by_user_id(self, user_id):
         for user in self.user_interfaces:
@@ -51,13 +57,14 @@ class InterfaceHolder(object):
         return None, None
     
     def update_task_in_user(self, task):
-        for user in self.user_interfaces:
-            if (user.interface_id==task.interface_id):
-                user.tasks_running.remove(task.task_id)
-                user.tasks_finished.append(task)
-                self.remove_task_in_user_by_task_id(user, task.task_id)
-                return True
-        return False
+        with self._condition:
+            for user in self.user_interfaces:
+                if (user.interface_id==task.interface_id):
+                    user.tasks_running.remove(task.task_id)
+                    user.finished_task(task)
+                    self.remove_task_in_user_by_task_id(user, task.task_id)
+                    return True
+            return False
     
     def find_user_by_interface_id(self, interface_id):
         for user in self.user_interfaces:
@@ -66,10 +73,24 @@ class InterfaceHolder(object):
         return None
     
     def remove_task_in_user_by_task_id(self, user, task_id):
-        for task_rec in user.tasks_recieved:
-            if (task_rec.task_id == task_id):
-                user.tasks_reieved.remove(task_rec)
+        with self._condition:
+            for task_rec in user.tasks_recieved:
+                if (task_rec.task_id == task_id):
+                    user.tasks_recieved.remove(task_rec)
+                    
+    def wait_for_first_finished_task_for_user(self, user):
+        user._finished_event.wait()
+        
+    def find_finished_task_for_user(self, user):
+        for task in user.tasks_finished:
+            if (task.done()):
+                user.tasks_finished.remove(task)
+                return task
+        return None
     
+    def reset_finished_event_for_user(self, user):
+        user.reset_finished_event()
+        
     def __str__(self):
         return ('#users: %d, #servers: %d, #clients: %d' 
                 % (len(self.user_interfaces)
@@ -85,6 +106,22 @@ class UserInterface(object):
         self.tasks_recieved = []
         self.tasks_running  = []
         self.tasks_finished = []
+        
+        self._condition = threading.Condition()
+        self._finished_event = threading.Event()
+        self._finished_event.clear()
+        
+    def finished_task(self, task):
+        with self._condition:
+            self.tasks_finished.append(task)
+            self._finished_event.set()
+        
+    def reset_finished_event(self):
+        with self._condition:
+            if (len(self.tasks_finished)==0):
+                self._finished_event.clear()
+            else:
+                self._finished_event.set()
        
     def counts(self):
         return ('#recv: %d, #running: %d, #fin: %d' 
@@ -195,6 +232,11 @@ class ClusterExecutor(NodeInterface):
         
     def get_finished_task_list(self):
         response = intercom.get_finished_task_list(self.ip, self.port
+                                        , params=self.params)
+        return response
+    
+    def get_single_task(self):
+        response = intercom.get_single_task(self.ip, self.port
                                         , params=self.params)
         return response
     

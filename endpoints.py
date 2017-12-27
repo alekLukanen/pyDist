@@ -54,3 +54,9 @@ async def connectUser(request):
     connection_data = json.loads( await request.text() )
     response_data = node.interfaces.connect_user(connection_data)
     return web.Response(body=response_data)
+
+async def getSingleTask(request):
+    logger.debug('/getSingleTask')
+    params = request.rel_url.query
+    task = await node.get_a_finished_task(params)
+    return web.Response(body=task)
