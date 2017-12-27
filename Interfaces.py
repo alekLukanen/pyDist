@@ -158,9 +158,7 @@ class ClusterExecutor(NodeInterface):
         self.port = port
         self.user_id = None
         self.group_id = None
-        
-    def update_params(self):
-        self.params = {'user_id': self.user_id, 'group_id': self.group_id}
+        self.params = {}
         
     def connect(self, user_id, group_id='base'):
         response = intercom.connect_user(self.ip, self.port
@@ -168,10 +166,15 @@ class ClusterExecutor(NodeInterface):
         if (response['connected']==True):
             self.user_id = user_id
             self.group_id = group_id
-            self.update_params()
+            self.params = {'user_id': self.user_id, 'group_id': self.group_id}
             return True
         else:
             return False
+        
+    def get_finished_task_list(self):
+        response = intercom.get_finished_task_list(self.ip, self.port
+                                        , params=self.params)
+        return response
         
     def __str__(self):
         return ('ip: %s, port: %s, user_id: %s, group_id: %s' 

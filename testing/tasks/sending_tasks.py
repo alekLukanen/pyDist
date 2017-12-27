@@ -23,7 +23,7 @@ taskManager = TaskManager()
 taskManager.executor = concurrent.futures.ThreadPoolExecutor(1)
 
 #logging utility
-#logging.getLogger("Nodes").setLevel(logging.WARNING)
+logging.getLogger("Nodes").setLevel(logging.WARNING)
 logging.getLogger("endpoints").setLevel(logging.WARNING)
 logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
@@ -65,7 +65,7 @@ def send_tasks(tasks_needed):
     counts = cluster.update_counts()
     logger.debug('counts: %s' % counts)
     
-    tasks = intercom.get_task_list('0.0.0.0', 9000, params=params)
+    tasks = cluster.get_finished_task_list()
     logger.debug('====Tasks====')
     task_count_conf = 0
     for task in tasks:

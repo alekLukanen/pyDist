@@ -43,8 +43,8 @@ async def nodeInfo(request):
     data = node.get_info()
     return web.Response(body=data)
 
-async def getTaskList(request):
-    logger.debug('/getTaskList')
+async def getFinishedTaskList(request):
+    logger.debug('/getFinishedTaskList')
     params = request.rel_url.query
     tasks_finished = node.get_tasks_finished(params)
     return web.Response(body=tasks_finished)

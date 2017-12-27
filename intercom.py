@@ -74,8 +74,8 @@ def get_node_info(server_ip, server_port, params={}):
     response = get_request(location)
     return parse_response(response)
 
-def get_task_list(server_ip, server_port, params={}):
-    location = location_assembler(server_ip, server_port, "/getTaskList")
+def get_finished_task_list(server_ip, server_port, params={}):
+    location = location_assembler(server_ip, server_port, "/getFinishedTaskList")
     response = get_request(location, params)
     task_list = parse_response(response)
     return pickleFunctions.unPickleListServer(task_list['data'])

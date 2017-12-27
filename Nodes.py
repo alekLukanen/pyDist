@@ -51,7 +51,7 @@ class ClusterNode(object):
         self.app.router.add_route('GET', '/', endpoints.index)
         self.app.router.add_route('GET', '/counts', endpoints.counts)
         self.app.router.add_route('GET', '/nodeInfo', endpoints.nodeInfo)
-        self.app.router.add_route('GET', '/getTaskList', endpoints.getTaskList)
+        self.app.router.add_route('GET', '/getFinishedTaskList', endpoints.getFinishedTaskList)
         self.app.router.add_route('POST', '/addTask', endpoints.addTask)
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
         self.app.router.add_route('POST', '/connectUser', endpoints.connectUser)
