@@ -45,6 +45,7 @@ class NodeInterface(object):
         return {'node_id': self.node_id, 'ip': self.ip
                 , 'port': self.port}
         
+        
     def update_counts(self):
         response = intercom.get_counts(self.ip, self.port)
         self.num_cores = response["num_cores"] if "num_cores" in response else 1

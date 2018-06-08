@@ -71,7 +71,7 @@ from ServerContext import ElementTypes
 import Job
 from JobManager import JobManager
 import intercom
-import NodeInterface
+import Interfaces
 
 
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -150,7 +150,7 @@ class Node(BaseNode):
     def update_NodeInt_counts(self):
         self.interfaces_lock.acquire()
         for NodeInt in self.interfaces:
-            NodeInt.update_variables()
+            NodeInt.update_counts()
         self.interfaces_lock.release()
     
     #with the jobs in the job_queue send the jobs to the various
@@ -250,13 +250,13 @@ class Node(BaseNode):
             if (general_element['type']==ElementTypes.slave_node_recv):
                 
                 node_data = general_element['json_data']
-                node_interface = NodeInterface.NodeInterface()
+                node_interface = Interfaces.NodeInterface()
                 
                 #update the nodes counts. This means that the node
                 #is up to date.
-                node_interface.NodeInterface_from_dictionary(node_data) #only need ip and port
-                node_interface.ip = general_element['from_ip']
-                node_interface.update_variables()
+                node_interface.ip = node_data['ip']
+                node_interface.port = node_data['port']
+                node_interface.update_info()
                 
                 #update the interfaces list
                 self.interfaces_lock.acquire()
