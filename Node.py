@@ -10,52 +10,52 @@ Created on Fri Sep 15 19:54:09 2017
 import json
 import time
 
-class BaseNode(object):
-    
-    def __init__(self):
-        self.name = 'default_name'
-        self.id = 'default_id'
-        self.ip = "0.0.0.0"
-        self.port = 9000
-        self.server_ip = None
-        self.server_port = None
-        self.num_cores = 0
-        self.num_active_jobs = 0
-        #added to a new node's id. 
-        #makes sure that all nodes have a unique id.
-        self.id_tick = 0 
-        self.job_id_tick = 0
-        
-    def increment_id_tick(self):
-        self.id_tick+=1
-        
-    def increment_job_id_tick(self):
-        self.job_id_tick+=1
-        
-    def get_address(self):
-        return "http://%s:%d" % (self.ip, self.port)
-        
-    def convert_to_dictionary(self):
-        node_as_dictionary = {'name': self.name,
-                              'id': self.id,
-                              'ip': self.ip,
-                              'port': self.port,
-                              'num_cores': self.num_cores,
-                              'num_active_jobs': self.num_active_jobs,
-                              'id_tick': self.id_tick}
-        return node_as_dictionary
-        
-    def convert_to_json(self):
-        return json.dumps(self.convert_to_dictionary())
-    
-    def BaseNode_from_dictionary(self, data):
-        if (data!=None):
-            self.name = data["name"]
-            self.id = data["id"]
-            self.ip = data["ip"]
-            self.port = data["port"]
-            self.num_cores = data["num_cores"]
-            self.num_active_jobs = data["num_active_jobs"]
+#class BaseNode(object):
+#    
+#    def __init__(self):
+#        self.name = 'default_name'
+#        self.id = 'default_id'
+#        self.ip = "0.0.0.0"
+#        self.port = 9000
+#        self.server_ip = None
+#        self.server_port = None
+#        self.num_cores = 0
+#        self.num_active_jobs = 0
+#        #added to a new node's id. 
+#        #makes sure that all nodes have a unique id.
+#        self.id_tick = 0 
+#        self.job_id_tick = 0
+#        
+#    def increment_id_tick(self):
+#        self.id_tick+=1
+#        
+#    def increment_job_id_tick(self):
+#        self.job_id_tick+=1
+#        
+#    def get_address(self):
+#        return "http://%s:%d" % (self.ip, self.port)
+#        
+#    def convert_to_dictionary(self):
+#        node_as_dictionary = {'name': self.name,
+#                              'id': self.id,
+#                              'ip': self.ip,
+#                              'port': self.port,
+#                              'num_cores': self.num_cores,
+#                              'num_active_jobs': self.num_active_jobs,
+#                              'id_tick': self.id_tick}
+#        return node_as_dictionary
+#        
+#    def convert_to_json(self):
+#        return json.dumps(self.convert_to_dictionary())
+#    
+#    def BaseNode_from_dictionary(self, data):
+#        if (data!=None):
+#            self.name = data["name"]
+#            self.id = data["id"]
+#            self.ip = data["ip"]
+#            self.port = data["port"]
+#            self.num_cores = data["num_cores"]
+#            self.num_active_jobs = data["num_active_jobs"]
         
 
 
@@ -66,7 +66,7 @@ import multiprocessing
 from queue import Queue
         
 #my libs
-import RESTEndpoints
+import RESTEndpoints as _RESTEndpoints
 from ServerContext import ElementTypes
 import Job
 from JobManager import JobManager
@@ -78,10 +78,11 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("flask").setLevel(logging.WARNING)
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
-class Node(BaseNode):
+class Node(Interfaces.NodeInterface):
     
     def __init__(self):
-        BaseNode.__init__(self)
+        Interfaces.NodeInterface.__init__(self)
+        
         self.num_cores = multiprocessing.cpu_count()
         
         self.jobManager = JobManager()
@@ -117,8 +118,6 @@ class Node(BaseNode):
     def connect(self, server_ip, server_port):
         self.logger.debug("connecting to %s:%d" % (server_ip,server_port))
         response = intercom.connect_as_slave(server_ip, server_port, self)
-        self.server_ip = server_ip
-        self.server_port = server_port
         if (response==None):
             print ("could not connect to that host, trying again")
         else:
@@ -127,7 +126,7 @@ class Node(BaseNode):
     #start the rest endpoints and the processor threads.    
     def create_server(self):
         #rest server thread
-        self.REST_thread = threading.Thread(target=RESTEndpoints.boot,args=(self.ip,self.port,self,))
+        self.REST_thread = threading.Thread(target=_RESTEndpoints.boot,args=(self.ip,self.port,self,))
         self.REST_thread.daemon = False
         self.REST_thread.start()
         #general info thread
@@ -263,10 +262,10 @@ class Node(BaseNode):
                 self.interfaces.append(node_interface)
                 self.interfaces_lock.release()
                 
-                self.logger.debug('(HEAD<<<NODE INTERFACE) ip: %s, port: %d'
-                                  % (node_interface.ip,node_interface.port))
+                self.logger.debug('(HEAD(%d)<<<NODE INTERFACE) ip: %s, port: %d'
+                                  % (self.port,node_interface.ip,node_interface.port))
                 
-                #self.logger.debug('(IFL) interfaces: %s' % self.interfaces)
+                self.logger.debug('(IFL) interfaces: %s' % self.interfaces)
                 
             else:
                 self.logger.debug('ElementTypes does not contain: %s' % general_element)
@@ -288,7 +287,7 @@ class Node(BaseNode):
         intercom.close_server(self.ip, self.port) #close this node's server
         
     def get_server_context(self):
-        return RESTEndpoints.sc
+        return _RESTEndpoints.sc
     
     def request_general_elements(self):
         return self.get_server_context().general_queue

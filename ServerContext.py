@@ -46,7 +46,7 @@ class ServerContext(object):
         return json.dumps( self.slaves[node_index] )
         
     def get_node_info(self):
-        node_dictionary = self.node_ref.convert_to_dictionary()
+        node_dictionary = self.node_ref.info()
         return json.dumps(node_dictionary)
     
     def get_node_counts(self):

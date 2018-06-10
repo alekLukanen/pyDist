@@ -39,7 +39,8 @@ class NodeInterface(object):
         return {'node_id': str(self.node_id), 'ip': self.ip
                 , 'port': self.port, 'num_cores': self.num_cores
                 , 'num_running': self.num_running
-                , 'num_queued':self.num_queued}
+                , 'num_queued': self.num_queued
+                , 'params': self.params}
         
     def get_signature(self):
         return {'node_id': self.node_id, 'ip': self.ip

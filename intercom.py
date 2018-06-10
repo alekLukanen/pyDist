@@ -29,13 +29,13 @@ def connect_as_slave(server_ip, server_port, node):
     return post_slave_node(server_ip, server_port, node)
 
 def post_master_node(server_ip, server_port, node):
-    data = node.convert_to_dictionary()
+    data = node.info()
     location = location_assembler(server_ip, server_port, "/addMasterNode")
     response = post_request(location, data)
     return parse_response(response)
     
 def post_slave_node(server_ip, server_port, node):
-    data = node.convert_to_dictionary()
+    data = node.info()
     location = location_assembler(server_ip, server_port, "/addSlaveNode")
     response = post_request(location, data)
     return parse_response(response)
@@ -107,12 +107,12 @@ class Directive:
     
     def get_global(node):
         return {"type":Directive.type_global,
-                "to_peer": node.convert_to_dictionary()}
+                "to_peer": node.info()}
     
     def get_peer_to_peer(node):
         return {"type": Directive.type_peer_to_peer,
-                "to_node":node.convert_to_dictionary()}
+                "to_node":node.info()}
         
     def get_to_cluster(cluster):
         return {"type": Directive.type_to_cluster,
-                "to_cluster": cluster.convert_to_dictionary()}
+                "to_cluster": cluster.info()}
