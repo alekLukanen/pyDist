@@ -11,6 +11,7 @@ import uuid
 import logging
 import sys
 import threading
+import asyncio
 
 import pickleFunctions
 import intercom
@@ -38,9 +39,9 @@ class InterfaceHolder(object):
             if (user_interface==None):
                 user_interface = UserInterface(user_data['user_id'], user_data['group_id'])
                 self.user_interfaces.append(user_interface)
-                return json.dumps( {'connected': True} )
+                return json.dumps({'connected': True})
             else:
-                return json.dumps( {'connected': True} )
+                return json.dumps({'connected': True})
         
     def find_user_by_user_id(self, user_id):
         for user in self.user_interfaces:
@@ -78,8 +79,8 @@ class InterfaceHolder(object):
                 if (task_rec.task_id == task_id):
                     user.tasks_recieved.remove(task_rec)
                     
-    def wait_for_first_finished_task_for_user(self, user):
-        user._finished_event.wait()
+    async def wait_for_first_finished_task_for_user(self, user):
+        await user._finished_event.wait()
         
     def find_finished_task_for_user(self, user):
         for task in user.tasks_finished:
@@ -108,7 +109,7 @@ class UserInterface(object):
         self.tasks_finished = []
         
         self._condition = threading.Condition()
-        self._finished_event = threading.Event()
+        self._finished_event = asyncio.Event()
         self._finished_event.clear()
         
     def finished_task(self, task):

@@ -68,6 +68,8 @@ def send_tasks(tasks_needed):
         #logger.debug('task: %s' % cluster.get_single_task())
         logger.info('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, SUCCESS: %s\x1b[0m' % 
                 (tasks_needed, task_count_conf, (tasks_needed==task_count_conf)))
+        if (task_count_conf==tasks_needed):
+            break
         time.sleep(0.1)
     '''
     cluster.update_tasks_sent()        
@@ -87,7 +89,7 @@ def send_tasks(tasks_needed):
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 16
+    tasks_needed = 100
     
     send_tasks(tasks_needed)
     #node = start_node()

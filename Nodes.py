@@ -64,7 +64,9 @@ class ClusterNode(object):
         print ('server_loop: ', self.server_loop)
         
     ###USER INTERACTION CODE##############
-    
+    async def shutdown_executor(self):
+        self.taskManager.executor.shutdown(wait=False)
+
     ######################################
         
     ###NODE INFO CODE ####################    
@@ -91,8 +93,11 @@ class ClusterNode(object):
     async def get_a_finished_task(self, params):
         user = self.interfaces.find_user_by_user_id(params['user_id'])
         if (user!=None):
-            await self.server_loop.run_in_executor(None
-                    , self.interfaces.wait_for_first_finished_task_for_user, user)
+            self.logger.debug('here1')
+            #await self.server_loop.run_in_executor(None
+            #        , self.interfaces.wait_for_first_finished_task_for_user, user)
+            await self.interfaces.wait_for_first_finished_task_for_user(user)
+            self.logger.debug('here1')
             task = self.interfaces.find_finished_task_for_user(user)
             self.interfaces.reset_finished_event_for_user(user)
             if (task!=None):
@@ -235,7 +240,11 @@ class ClusterNode(object):
         
 if __name__=='__main__':
     print ('starting a ClusterExecutorNode...')
-    node = ClusterNode()
-    node.boot('0.0.0.0', 9000)
+    try:
+        node = ClusterNode()
+        node.boot('0.0.0.0', 9000)
+    except KeyboardInterrupt:
+        print('KeyboardInterrupt')
+        node.taskManager.executor.shutdown(wait=True)
     
     
