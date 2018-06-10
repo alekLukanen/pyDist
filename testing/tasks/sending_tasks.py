@@ -16,11 +16,11 @@ import logging
 import sys
 
 import Interfaces
-from TaskManager import TaskManager
+#from TaskManager import TaskManager
 
 #change these up for use in other cases
-taskManager = TaskManager()
-taskManager.executor = concurrent.futures.ThreadPoolExecutor(4)
+#taskManager = TaskManager()
+#taskManager.executor = concurrent.futures.ThreadPoolExecutor(4)
 
 #logging utility
 logging.getLogger("Nodes").setLevel(logging.WARNING)
@@ -87,7 +87,7 @@ def send_tasks(tasks_needed):
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 100
+    tasks_needed = 16
     
     send_tasks(tasks_needed)
     #node = start_node()

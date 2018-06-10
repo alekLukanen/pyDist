@@ -8,7 +8,7 @@ Created on Thu Nov  2 12:27:31 2017
 
 import asyncio
 lp = asyncio.get_event_loop()
-if (lp.is_closed()==True):
+if lp.is_closed()==True or lp.is_running()==True:
     print ('the current eventloop was closed, a new one was created')
     lp_temp = asyncio.new_event_loop()
     asyncio.set_event_loop(lp_temp)
@@ -42,12 +42,16 @@ class ClusterNode(object):
         
         self.interfaces = Interfaces.InterfaceHolder()
         
-        self.server_loop = asyncio.get_event_loop()
-        self.io_loop = asyncio.new_event_loop()
+        #self.io_loop = asyncio.new_event_loop()
+        self.server_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.server_loop)
         
         self.task_added = True
         
-        self.app = web.Application(loop=self.server_loop)
+        print ('server_loop: ', self.server_loop)
+        
+        
+        self.app = web.Application()
         self.app.router.add_route('GET', '/', endpoints.index)
         self.app.router.add_route('GET', '/counts', endpoints.counts)
         self.app.router.add_route('GET', '/nodeInfo', endpoints.nodeInfo)
@@ -56,6 +60,8 @@ class ClusterNode(object):
         self.app.router.add_route('POST', '/addTask', endpoints.addTask)
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
         self.app.router.add_route('POST', '/connectUser', endpoints.connectUser)
+        
+        print ('server_loop: ', self.server_loop)
         
     ###USER INTERACTION CODE##############
     
@@ -105,6 +111,8 @@ class ClusterNode(object):
         endpoints.node = self #give the endpoints a reference to this object
         self.interface.ip = ip
         self.interface.port = port
+        print ('app: ', self.app)
+        print ('server_loop: ', self.server_loop)
         web.run_app(self.app, host=self.interface.ip, port=self.interface.port)
         
     def get_address(self):
@@ -189,6 +197,7 @@ class ClusterNode(object):
     
     def task_finished_callback(self, future):
         self.logger.debug('task_finished_callback() result: %s' % future)
+        print ('result: ', future.result())
         #get the task from future and unpickle the inside of the task
         returned_task = future.result()
         returned_task.unpickleInnerData()
