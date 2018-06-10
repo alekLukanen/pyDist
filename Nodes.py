@@ -93,17 +93,13 @@ class ClusterNode(object):
     async def get_a_finished_task(self, params):
         user = self.interfaces.find_user_by_user_id(params['user_id'])
         if (user!=None):
-            self.logger.debug('here1')
-            #await self.server_loop.run_in_executor(None
-            #        , self.interfaces.wait_for_first_finished_task_for_user, user)
             await self.interfaces.wait_for_first_finished_task_for_user(user)
-            self.logger.debug('here1')
             task = self.interfaces.find_finished_task_for_user(user)
             self.interfaces.reset_finished_event_for_user(user)
             if (task!=None):
                 dictionary = {'data': task.pickle()}
-                self.logger.debug('dictionary: %s' % dictionary)
-                return json.dumps( dictionary )
+                #self.logger.debug('dictionary: %s' % dictionary)
+                return json.dumps(dictionary)
             else:
                 self.logger.warning('the task was of Nonetype')
                 return json.dumps( {'data': None, 'error': 'task was none'} )
@@ -198,7 +194,7 @@ class ClusterNode(object):
         self.logger.debug('add_existing_task()')
         #self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task)
         self.server_loop.call_soon_threadsafe(self.add_task_to_user, task)
-        return json.dumps( {'task_added': self.task_added} )
+        return json.dumps({'task_added': self.task_added})
     
     def task_finished_callback(self, future):
         self.logger.debug('task_finished_callback() result: %s' % future)

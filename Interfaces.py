@@ -13,11 +13,8 @@ import sys
 import threading
 import asyncio
 
-import pickleFunctions
 import intercom
 import Tasks
-
-import concurrent.futures
 
 class InterfaceHolder(object):
     
@@ -25,7 +22,8 @@ class InterfaceHolder(object):
         logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
         self.logger = logging.getLogger(__name__)
-        
+
+        #TODO need to update these lists to dictionaries
         self.user_interfaces = []
         self.server_interfaces = []
         self.client_interfaces = []
@@ -84,7 +82,7 @@ class InterfaceHolder(object):
         
     def find_finished_task_for_user(self, user):
         for task in user.tasks_finished:
-            if (task.done()):
+            if task.done():
                 user.tasks_finished.remove(task)
                 return task
         return None
@@ -239,8 +237,7 @@ class ClusterExecutor(NodeInterface):
         return response
     
     def get_single_task(self):
-        response = intercom.get_single_task(self.ip, self.port
-                                        , params=self.params)
+        response = intercom.get_single_task(self.ip, self.port, params=self.params)
         return response
     
     def update_tasks_sent(self):

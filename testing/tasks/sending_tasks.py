@@ -38,7 +38,7 @@ def start_node():
     return node
     
 def ex(a,b):
-    time.sleep(0.01)
+    time.sleep(0.001)
     return [True,a,b]
     
 def send_tasks(tasks_needed):
@@ -70,7 +70,7 @@ def send_tasks(tasks_needed):
                 (tasks_needed, task_count_conf, (tasks_needed==task_count_conf)))
         if (task_count_conf==tasks_needed):
             break
-        time.sleep(0.1)
+        #time.sleep(0.1)
     '''
     cluster.update_tasks_sent()        
     gen = concurrent.futures.as_completed(cluster.tasks_sent)
@@ -89,7 +89,7 @@ def send_tasks(tasks_needed):
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 100
+    tasks_needed = 1000
     
     send_tasks(tasks_needed)
     #node = start_node()
