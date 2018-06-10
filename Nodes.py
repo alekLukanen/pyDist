@@ -40,10 +40,7 @@ class ClusterNode(object):
         self.interface.num_running = 0
         self.interface.num_queued = 0
         
-        self.user_interfaces = []
-        
-        self.server_interfaces = []
-        self.client_interfaces = []
+        self.interfaces = Interfaces.InterfaceHolder()
         
         self.server_loop = asyncio.get_event_loop()
         self.io_loop = asyncio.new_event_loop()
@@ -54,37 +51,22 @@ class ClusterNode(object):
         self.app.router.add_route('GET', '/', endpoints.index)
         self.app.router.add_route('GET', '/counts', endpoints.counts)
         self.app.router.add_route('GET', '/nodeInfo', endpoints.nodeInfo)
-        self.app.router.add_route('GET', '/getTaskList', endpoints.getTaskList)
+        self.app.router.add_route('GET', '/getFinishedTaskList', endpoints.getFinishedTaskList)
+        self.app.router.add_route('GET', '/getSingleTask', endpoints.getSingleTask)
         self.app.router.add_route('POST', '/addTask', endpoints.addTask)
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
         self.app.router.add_route('POST', '/connectUser', endpoints.connectUser)
         
     ###USER INTERACTION CODE##############
-    def connect_user(self, user_data):
-        user_interface = self.find_user_by_user_id(user_data['user_id'])
-        if (user_interface==None):
-            user_interface = Interfaces.UserInterface(user_data['user_id'], user_data['group_id'])
-            self.user_interfaces.append(user_interface)
-            return json.dumps( {'connected': True} )
-        else:
-            return json.dumps( {'connected': True} )
-    
-    def find_user_by_user_id(self, user_id):
-        for user in self.user_interfaces:
-            if (user.user_id==user_id):
-                return user
-        return None
     
     ######################################
         
     ###NODE INFO CODE ####################    
     def get_counts(self):
         num_cores = self.taskManager.num_cores
-        num_tasks_in_user_tasks = len(self.taskManager.user_tasks)
         num_tasks_in_running_list = len(self.taskManager.tasks)
         num_tasks_in_queue_list = len(self.taskManager.queued_tasks)
-        dictionary = {'num_user_tasks': num_tasks_in_user_tasks
-                      , 'num_tasks_running': num_tasks_in_running_list
+        dictionary = {'num_tasks_running': num_tasks_in_running_list
                       , 'num_tasks_queue': num_tasks_in_queue_list
                       , 'num_cores':num_cores}
         return json.dumps( dictionary )
@@ -92,9 +74,31 @@ class ClusterNode(object):
     def get_info(self):
         return json.dumps( self.interface.info() )
     
-    def get_task_list(self):
-        dictionary = {'data': pickleFunctions.pickleListServer(self.taskManager.user_tasks)}
-        return json.dumps( dictionary )
+    def get_tasks_finished(self, params):
+        user = self.interfaces.find_user_by_user_id(params['user_id'])
+        if (user!=None):
+            dictionary = {'data': pickleFunctions.pickleListServer(user.tasks_finished)}
+            return json.dumps( dictionary )
+        else:
+            return json.dumps( {'data': [], 'error': 'no user for that user_id'} )
+        
+    async def get_a_finished_task(self, params):
+        user = self.interfaces.find_user_by_user_id(params['user_id'])
+        if (user!=None):
+            await self.server_loop.run_in_executor(None
+                    , self.interfaces.wait_for_first_finished_task_for_user, user)
+            task = self.interfaces.find_finished_task_for_user(user)
+            self.interfaces.reset_finished_event_for_user(user)
+            if (task!=None):
+                dictionary = {'data': task.pickle()}
+                self.logger.debug('dictionary: %s' % dictionary)
+                return json.dumps( dictionary )
+            else:
+                self.logger.warning('the task was of Nonetype')
+                return json.dumps( {'data': None, 'error': 'task was none'} )
+        else:
+            return json.dumps( {'data': None, 'error': 'no user for that user_id'} )
+        
     ###################################
         
     def boot(self, ip, port):
@@ -119,10 +123,9 @@ class ClusterNode(object):
         self.logger.debug('task_object %s' % task_object)
         
         #add the task to the users submitted tasks array
-        user = self.find_user_by_user_id(task['user_id'])
+        user = self.interfaces.find_user_by_user_id(task['user_id'])
         if (user!=None):
-            task_object.user_id = task['user_id']
-            task_object.group_id = task['group_id']
+            task_object.interface_id = user.interface_id
             user.tasks_recieved.append(task_object)
         else:
             self.logger.warning('THE USER DOES NOT EXIST, TASK NOT ADDED')
@@ -133,7 +136,6 @@ class ClusterNode(object):
             task = self.taskManager.executor.submit(Tasks.caller_helper, task_object)
             task.add_done_callback(self.task_finished_callback)
             self.taskManager.submit(task)
-            self.taskManager.user_tasks.append(task_object)
             self.logger.debug('task_object: %s' % task_object)
         else:
             self.taskManager.queued_tasks.append(task_object)
@@ -141,9 +143,48 @@ class ClusterNode(object):
         self.task_added = True
         return
     
+    def run_task_from_user(self):
+        if (len(self.taskManager.tasks)<self.taskManager.num_cores):
+            user, task_object = self.interfaces.find_user_task()
+            if (user==task_object==None):
+                self.logger.debug('No users have tasks to perfom')
+                return False
+            future = self.taskManager.executor.submit(Tasks.caller_helper, task_object)
+            future.add_done_callback(self.task_finished_callback)
+            self.taskManager.submit(future)
+            user.tasks_running.append(task_object.task_id)
+            self.logger.debug('task_object: %s' % task_object)
+            return True
+        else:
+            self.logger.debug('task was not run becuase no cores available')
+            return False
+        
+    def add_task_to_user(self, task):
+        self.logger.debug('adding_existing_task_async()')
+        task_object = pickleFunctions.unPickleServer(task['data'])
+        self.sign_task(task_object)
+        
+        #always pickle inner task data here
+        task_object.pickleInnerData()
+        self.logger.debug('task_object %s' % task_object)
+        
+        #add the task to the users submitted tasks array
+        user = self.interfaces.find_user_by_user_id(task['user_id'])
+        if (user!=None):
+            task_object.interface_id = user.interface_id
+            user.tasks_recieved.append(task_object)
+        else:
+            self.logger.warning('THE USER DOES NOT EXIST, TASK NOT ADDED')
+            self.task_added = False
+            return
+        #set add bool and find user task to run
+        self.task_added = True
+        self.run_task_from_user()
+    
     def add_existing_task(self, task):
         self.logger.debug('add_existing_task()')
-        self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task)
+        #self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task)
+        self.server_loop.call_soon_threadsafe(self.add_task_to_user, task)
         return json.dumps( {'task_added': self.task_added} )
     
     def task_finished_callback(self, future):
@@ -151,17 +192,19 @@ class ClusterNode(object):
         #get the task from future and unpickle the inside of the task
         returned_task = future.result()
         returned_task.unpickleInnerData()
+        returned_task.new_condition()
         #here is where the taskmanager is udated based on the 
         #tasks finished callback.
         #subract one from the taskmanagers couter
         #add a done result to the task
         #update the task in user_tasks with the result
         #remove the future from the task list, this keeps the futures list small
-        self.taskManager.add_finished_task(returned_task.task_id)
-        t_updated = self.taskManager.update_task_by_id(returned_task)
+        t_updated = self.interfaces.update_task_in_user(returned_task) #self.taskManager.update_task_by_id(returned_task)
         t_removed = self.taskManager.remove_task_from_task_list_by_id(returned_task)
-        t_added   = self.taskManager.run_queued_task(self)
+        t_added   = self.run_task_from_user()
         #show warning messages when necessary
+        self.logger.debug('user.counts(): %s' 
+                % self.interfaces.find_user_by_interface_id(returned_task.interface_id).counts())
         if (t_updated==False):
             self.logger.warning('A TASK FAILED TO UPDATE')
         if (t_removed==False):
@@ -178,24 +221,6 @@ class ClusterNode(object):
         self.logger.debug('RECIEVED MESSAGE: ', msg)
         
     #####################################
-    
-    #EXECUTOR METHODS HERE####################
-    
-    #submit a new job here
-    #this is where a new task needs to be created
-    def submit(self, fn, *args, **kwards):
-        task = Tasks.Task()
-        
-        self.logger.debug('submit')
-        
-    def map(self, func, *iterables, timeout=None, chuncksize=1):
-        self.logger.debug('map function')
-        
-    def shutdown(self, wait=True):
-        self.logger.debug('shutdown()')
-        self.server_loop.call_soon_threadsafe(self.server_loop.stop)
-    
-    ##########################################
     
     
         

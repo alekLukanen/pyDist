@@ -36,7 +36,6 @@ class TaskManager(object):
         
         #these are the Task object themselves not
         #the futures objects rapped around them.
-        self.user_tasks = []
         self.queued_tasks = []
         self.tasks_finished = []
         

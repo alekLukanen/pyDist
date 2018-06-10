@@ -10,9 +10,9 @@ import json
 import pickleFunctions
 
 
-def get_request(location):
+def get_request(location, params={}):
     try:
-        response = requests.get(location)
+        response = requests.get(location, params=params)
         return response
     except:
         return None
@@ -74,11 +74,17 @@ def get_node_info(server_ip, server_port, params={}):
     response = get_request(location)
     return parse_response(response)
 
-def get_task_list(server_ip, server_port, params={}):
-    location = location_assembler(server_ip, server_port, "/getTaskList")
-    response = get_request(location)
+def get_finished_task_list(server_ip, server_port, params={}):
+    location = location_assembler(server_ip, server_port, "/getFinishedTaskList")
+    response = get_request(location, params)
     task_list = parse_response(response)
     return pickleFunctions.unPickleListServer(task_list['data'])
+
+def get_single_task(server_ip, server_port, params={}):
+    location = location_assembler(server_ip, server_port, "/getSingleTask")
+    response = get_request(location, params)
+    task = parse_response(response)
+    return pickleFunctions.unPickleServer(task['data'])
 
 def connect_user(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/connectUser")
