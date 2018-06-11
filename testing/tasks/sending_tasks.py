@@ -14,13 +14,15 @@ import Tasks
 import concurrent
 import logging
 import sys
+import os
 
 import Interfaces
-#from TaskManager import TaskManager
+import intercom
+from TaskManager import TaskManager
 
 #change these up for use in other cases
-#taskManager = TaskManager()
-#taskManager.executor = concurrent.futures.ThreadPoolExecutor(4)
+taskManager = TaskManager()
+taskManager.executor = concurrent.futures.ThreadPoolExecutor(1)
 
 #logging utility
 logging.getLogger("Nodes").setLevel(logging.WARNING)
@@ -44,7 +46,7 @@ def ex(a,b):
 def send_tasks(tasks_needed):
     logger.debug('sending messages (PROCESS 2)')
     
-    time.sleep(1.5)
+    time.sleep(1.0)
     cluster = Interfaces.ClusterExecutor('0.0.0.0', 9000)
     cluster.connect('testing_user')
     
@@ -84,23 +86,23 @@ def send_tasks(tasks_needed):
                 (tasks_needed, task_count_conf, (tasks_needed==task_count_conf)))
     
     '''
-    logger.debug('end of test')
+    logger.debug('finished with sending and receiving tasks')
 
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 1000
+    tasks_needed = 100
     
-    send_tasks(tasks_needed)
-    #node = start_node()
-    
-    '''
+    #send_tasks(tasks_needed)
+
     taskManager.tasks.append(
                 taskManager.executor.submit(send_tasks,tasks_needed))
-    try:
-        node = start_node()
-    except Exception as e:
+
+    start_node()
+
+    logger.debug('Ened the test...')
+
+    #try:
+    #except Exception as e:
         #logger.debug('node.taskManager.tasks: %s' % node.taskManager.tasks)
         #logger.debug('node.taskManager.tasks[0].result().result(): %s' % node.taskManager.tasks[0].result().result())
-        logger.debug('Ened the test...')
-        '''

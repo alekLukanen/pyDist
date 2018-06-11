@@ -232,15 +232,10 @@ class ClusterNode(object):
         
     #####################################
     
-    
         
 if __name__=='__main__':
     print ('starting a ClusterExecutorNode...')
-    try:
-        node = ClusterNode()
-        node.boot('0.0.0.0', 9000)
-    except KeyboardInterrupt:
-        print('KeyboardInterrupt')
-        node.taskManager.executor.shutdown(wait=True)
+    node = ClusterNode()
+    node.boot('0.0.0.0', 9000)
     
     

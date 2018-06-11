@@ -15,6 +15,7 @@ import asyncio
 
 import intercom
 import Tasks
+from MultiKeyData import MultiKeyData
 
 class InterfaceHolder(object):
     
@@ -24,7 +25,7 @@ class InterfaceHolder(object):
         self.logger = logging.getLogger(__name__)
 
         #TODO need to update these lists to dictionaries
-        self.user_interfaces = []
+        self.user_interfaces = {}
         self.server_interfaces = []
         self.client_interfaces = []
         
@@ -36,28 +37,26 @@ class InterfaceHolder(object):
             user_interface = self.find_user_by_user_id(user_data['user_id'])
             if (user_interface==None):
                 user_interface = UserInterface(user_data['user_id'], user_data['group_id'])
-                self.user_interfaces.append(user_interface)
+                self.user_interfaces.update({user_interface.user_id:user_interface})
                 return json.dumps({'connected': True})
             else:
                 return json.dumps({'connected': True})
         
     def find_user_by_user_id(self, user_id):
-        for user in self.user_interfaces:
-            if (user.user_id==user_id):
-                return user
-        return None
+        return self.user_interfaces[user_id] if user_id in self.user_interfaces else None
         
     def find_user_task(self):
-        for user in self.user_interfaces:
+        for user_id in self.user_interfaces:
+            user = self.user_interfaces[user_id]
             if (len(user.tasks_recieved)>0):
-                #run a task
                 task = user.tasks_recieved.pop()
                 return user, task
         return None, None
     
     def update_task_in_user(self, task):
         with self._condition:
-            for user in self.user_interfaces:
+            for user_id in self.user_interfaces:
+                user = self.user_interfaces[user_id]
                 if (user.interface_id==task.interface_id):
                     user.tasks_running.remove(task.task_id)
                     user.finished_task(task)
@@ -66,15 +65,16 @@ class InterfaceHolder(object):
             return False
     
     def find_user_by_interface_id(self, interface_id):
-        for user in self.user_interfaces:
-            if (user.interface_id==interface_id):
+        for user_id in self.user_interfaces:
+            user = self.user_interfaces[user_id]
+            if user.interface_id==interface_id:
                 return user
         return None
     
     def remove_task_in_user_by_task_id(self, user, task_id):
         with self._condition:
             for task_rec in user.tasks_recieved:
-                if (task_rec.task_id == task_id):
+                if task_rec.task_id == task_id:
                     user.tasks_recieved.remove(task_rec)
                     
     async def wait_for_first_finished_task_for_user(self, user):
@@ -140,9 +140,9 @@ class NodeInterface(object):
         self.ip = None
         self.port = None
         self.num_cores = None
-        self.num_running = None #for user side only
-        self.num_queued = None  #for user side only
-        self.tasks_sent = []    #for user side only
+        self.num_running = None            #for user side only
+        self.num_queued = None             #for user side only
+        self.tasks_sent = MultiKeyData()   #for user side only
         self.params = {}
         
     def info(self):
@@ -177,7 +177,7 @@ class NodeInterface(object):
     def add_task(self, task):
         response = intercom.post_task(self.ip, self.port, task, params=self.params)
         if (response['task_added']==True):
-            self.tasks_sent.append(task)
+            self.tasks_sent[task.task_id] = task
             return True
         else:
             return False
@@ -245,12 +245,17 @@ class ClusterExecutor(NodeInterface):
         for task in response:
             task.unpickleInnerData()
             task.new_condition()
-            for task_sent in self.tasks_sent:
-                if (task_sent.task_id==task.task_id):
-                    task_sent.update(task)
-                    break
+            if task.task_id in self.tasks_sent:
+                self.tasks_sent[task.task.task_id].update(task)
+            #for task_sent in self.tasks_sent:
+            #    if (task_sent.task_id==task.task_id):
+            #        task_sent.update(task)
+            #        break
         
     def __str__(self):
         return ('ip: %s, port: %s, user_id: %s, group_id: %s' 
                 % (self.ip, self.port, self.user_id, self.group_id))
-        
+
+
+if __name__ == '__main__':
+    print('Interfaces Testing')
