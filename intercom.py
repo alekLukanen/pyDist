@@ -3,7 +3,7 @@
 """
 Created on Sat Sep 23 18:37:52 2017
 
-@author: lukanen
+@author: Aleksandr Lukanen
 """
 import requests 
 import json

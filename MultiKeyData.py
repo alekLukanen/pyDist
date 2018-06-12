@@ -34,7 +34,7 @@ class MultiKeyData(object):
         return list(self._keys.keys())
 
     def __getitem__(self, key):
-        return self._values[self._keys[key]]
+        return self._values[self._keys[key]] if key in self._keys else None
 
     def __setitem__(self, key, value):
         self._index += self.__add_item(key, value)

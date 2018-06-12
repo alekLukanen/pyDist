@@ -3,7 +3,7 @@
 """
 Created on Thu Nov  2 12:27:31 2017
 
-@author: alek
+@author: Aleksandr Lukanen
 """
 
 import asyncio
@@ -61,7 +61,7 @@ class ClusterNode(object):
         self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
         self.app.router.add_route('POST', '/connectUser', endpoints.connectUser)
         
-        print ('server_loop: ', self.server_loop)
+        print('server_loop: ', self.server_loop)
         
     ###USER INTERACTION CODE##############
     async def shutdown_executor(self):
@@ -77,18 +77,18 @@ class ClusterNode(object):
         dictionary = {'num_tasks_running': num_tasks_in_running_list
                       , 'num_tasks_queue': num_tasks_in_queue_list
                       , 'num_cores':num_cores}
-        return json.dumps( dictionary )
+        return json.dumps(dictionary)
     
     def get_info(self):
-        return json.dumps( self.interface.info() )
+        return json.dumps(self.interface.info())
     
     def get_tasks_finished(self, params):
         user = self.interfaces.find_user_by_user_id(params['user_id'])
         if (user!=None):
             dictionary = {'data': pickleFunctions.pickleListServer(user.tasks_finished)}
-            return json.dumps( dictionary )
+            return json.dumps(dictionary)
         else:
-            return json.dumps( {'data': [], 'error': 'no user for that user_id'} )
+            return json.dumps({'data': [], 'error': 'no user for that user_id'})
         
     async def get_a_finished_task(self, params):
         user = self.interfaces.find_user_by_user_id(params['user_id'])
@@ -107,7 +107,7 @@ class ClusterNode(object):
             return json.dumps( {'data': None, 'error': 'no user for that user_id'} )
         
     ###################################
-        
+
     def boot(self, ip, port):
         endpoints.node = self #give the endpoints a reference to this object
         self.interface.ip = ip

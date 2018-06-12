@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 
-@author: lukanen
+@author: Aleksandr Lukanen
 """
 
 import sys
@@ -91,7 +91,7 @@ def send_tasks(tasks_needed):
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 100
+    tasks_needed = 16
     
     #send_tasks(tasks_needed)
 

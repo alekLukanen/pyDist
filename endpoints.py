@@ -3,7 +3,7 @@
 """
 Created on Fri Nov  3 16:43:16 2017
 
-@author: alek
+@author: Aleksandr Lukanen
 """
 
 from aiohttp import web

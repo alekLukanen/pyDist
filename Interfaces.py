@@ -17,14 +17,14 @@ import intercom
 import Tasks
 from MultiKeyData import MultiKeyData
 
+
 class InterfaceHolder(object):
     
     def __init__(self):
         logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
         self.logger = logging.getLogger(__name__)
-
-        #TODO need to update these lists to dictionaries
+        
         self.user_interfaces = {}
         self.server_interfaces = []
         self.client_interfaces = []
@@ -142,7 +142,7 @@ class NodeInterface(object):
         self.num_cores = None
         self.num_running = None            #for user side only
         self.num_queued = None             #for user side only
-        self.tasks_sent = MultiKeyData()   #for user side only
+        self.tasks_sent = {}               #for user side only
         self.params = {}
         
     def info(self):
@@ -155,8 +155,7 @@ class NodeInterface(object):
     def get_signature(self):
         return {'node_id': self.node_id, 'ip': self.ip
                 , 'port': self.port}
-        
-        
+
     def update_counts(self):
         response = intercom.get_counts(self.ip, self.port)
         self.num_cores = response["num_cores"] if "num_cores" in response else 1
@@ -187,9 +186,8 @@ class NodeInterface(object):
     
     def get_num_running(self):
         return self.num_running
-    
 
-#based on the NodeInterface class
+
 class ClusterExecutor(NodeInterface):
     
     def __init__(self, ip, port):
