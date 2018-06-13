@@ -164,8 +164,8 @@ class Task(concurrent.futures._base.Future):
         return None
     
     def __str__(self):
-        return ("task_id: %s, interface_id: %s, id(userDef): %s, cluster_trace: %s" 
-                % (self.task_id, self.interface_id, self.id, self.cluster_trace))
+        return ("task_id: %s, interface_id: %s, id(userDef): %s, state: %s, cluster_trace: %s"
+                % (self.task_id, self.interface_id, self.id, self._state,self.cluster_trace))
     
 if __name__ == '__main__':
     task = Task()

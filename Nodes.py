@@ -48,8 +48,7 @@ class ClusterNode(object):
         
         self.task_added = True
         
-        print ('server_loop: ', self.server_loop)
-        
+        print('server_loop: ', self.server_loop)
         
         self.app = web.Application()
         self.app.router.add_route('GET', '/', endpoints.index)
@@ -91,20 +90,24 @@ class ClusterNode(object):
             return json.dumps({'data': [], 'error': 'no user for that user_id'})
         
     async def get_a_finished_task(self, params):
+        if 'user_id' not in params:
+            await asyncio.sleep(1)
+            return json.dumps({'data': None, 'error': 'a user_id was not provided'})
+
         user = self.interfaces.find_user_by_user_id(params['user_id'])
-        if (user!=None):
+        if user!=None:
             await self.interfaces.wait_for_first_finished_task_for_user(user)
             task = self.interfaces.find_finished_task_for_user(user)
             self.interfaces.reset_finished_event_for_user(user)
-            if (task!=None):
+            if task!=None:
                 dictionary = {'data': task.pickle()}
                 #self.logger.debug('dictionary: %s' % dictionary)
                 return json.dumps(dictionary)
             else:
                 self.logger.warning('the task was of Nonetype')
-                return json.dumps( {'data': None, 'error': 'task was none'} )
+                return json.dumps({'data': None, 'error': 'task was none'})
         else:
-            return json.dumps( {'data': None, 'error': 'no user for that user_id'} )
+            return json.dumps({'data': None, 'error': 'no user for that user_id'})
         
     ###################################
 
@@ -198,7 +201,6 @@ class ClusterNode(object):
     
     def task_finished_callback(self, future):
         self.logger.debug('task_finished_callback() result: %s' % future)
-        print ('result: ', future.result())
         #get the task from future and unpickle the inside of the task
         returned_task = future.result()
         returned_task.unpickleInnerData()

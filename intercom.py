@@ -17,6 +17,7 @@ def get_request(location, params={}):
     except:
         return None
 
+
 def post_request(location, data, headers={"Content-Type":"application/json"}):
     try:
         response = requests.post(location,data=json.dumps(data)
@@ -25,21 +26,25 @@ def post_request(location, data, headers={"Content-Type":"application/json"}):
     except:
         return None
 
+
 def connect_as_slave(server_ip, server_port, node):
     return post_slave_node(server_ip, server_port, node)
+
 
 def post_master_node(server_ip, server_port, node):
     data = node.info()
     location = location_assembler(server_ip, server_port, "/addMasterNode")
     response = post_request(location, data)
     return parse_response(response)
-    
+
+
 def post_slave_node(server_ip, server_port, node):
     data = node.info()
     location = location_assembler(server_ip, server_port, "/addSlaveNode")
     response = post_request(location, data)
     return parse_response(response)
-    
+
+
 def close_server(server_ip, server_port):
     location = location_assembler(server_ip, server_port, "/shutdown")
     response = requests.get(location) 
@@ -57,6 +62,7 @@ def post_string_message(server_ip, server_port, message, params={}):
     response = post_request(location, message_data)
     return parse_response(response)
 
+
 def post_task(server_ip, server_port, task, params={}):
     task_data = task.createDictionary()
     task_data.update(params)
@@ -64,15 +70,18 @@ def post_task(server_ip, server_port, task, params={}):
     response = post_request(location, task_data)
     return parse_response(response)
 
+
 def get_counts(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/counts")
     response = get_request(location)
     return parse_response(response)
 
+
 def get_node_info(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/nodeInfo")
     response = get_request(location)
     return parse_response(response)
+
 
 def get_finished_task_list(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/getFinishedTaskList")
@@ -80,11 +89,13 @@ def get_finished_task_list(server_ip, server_port, params={}):
     task_list = parse_response(response)
     return pickleFunctions.unPickleListServer(task_list['data'])
 
+
 def get_single_task(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/getSingleTask")
     response = get_request(location, params)
     task = parse_response(response)
     return pickleFunctions.unPickleServer(task['data'])
+
 
 def connect_user(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/connectUser")
@@ -92,6 +103,7 @@ def connect_user(server_ip, server_port, params={}):
     return parse_response(response)
 
 #def post_node_info_by_index(server_ip, server_port):
+
 
 def parse_response(response):
     if (response!=None):
@@ -101,10 +113,12 @@ def parse_response(response):
             return response.text
     return None
 
+
 def location_assembler(ip, port, endpoint):
     address = "http://%s:%d" % (ip, port)
     location = "%s%s" % (address, endpoint)
     return location
+
 
 class Directive:
     type_global = "global"

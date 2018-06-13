@@ -12,9 +12,11 @@ import logging
 import sys
 import threading
 import asyncio
+import concurrent
 
 import intercom
 import Tasks
+from TaskManager import TaskManager
 from MultiKeyData import MultiKeyData
 
 
@@ -24,7 +26,7 @@ class InterfaceHolder(object):
         logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
         self.logger = logging.getLogger(__name__)
-        
+
         self.user_interfaces = {}
         self.server_interfaces = []
         self.client_interfaces = []
@@ -57,7 +59,7 @@ class InterfaceHolder(object):
         with self._condition:
             for user_id in self.user_interfaces:
                 user = self.user_interfaces[user_id]
-                if (user.interface_id==task.interface_id):
+                if user.interface_id==task.interface_id:
                     user.tasks_running.remove(task.task_id)
                     user.finished_task(task)
                     self.remove_task_in_user_by_task_id(user, task.task_id)
@@ -144,6 +146,10 @@ class NodeInterface(object):
         self.num_queued = None             #for user side only
         self.tasks_sent = {}               #for user side only
         self.params = {}
+
+        logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
+                            , stream=sys.stdout, level=logging.DEBUG)
+        self.logger = logging.getLogger(__name__)
         
     def info(self):
         return {'node_id': str(self.node_id), 'ip': self.ip
@@ -174,6 +180,7 @@ class NodeInterface(object):
         return response
     
     def add_task(self, task):
+        self.logger.debug('C <--- U task: %s' % task)
         response = intercom.post_task(self.ip, self.port, task, params=self.params)
         if (response['task_added']==True):
             self.tasks_sent[task.task_id] = task
@@ -188,25 +195,46 @@ class NodeInterface(object):
         return self.num_running
 
 
-class ClusterExecutor(NodeInterface):
+class ClusterExecutor(object):
     
     def __init__(self, ip, port):
-        NodeInterface.__init__(self)
         self.ip = ip
         self.port = port
         self.user_id = None
         self.group_id = None
+        self.params = {}
+
+        self.tasks_sent = {}
+        self.executor_tasks_sent = []
+
+        #need to create thread here that waits for
+        #finished task on the Node.
+        self.taskManager = TaskManager()
+        self.taskManager.executor = concurrent.futures.ThreadPoolExecutor(1)
+
+        self._condition = threading.Condition()
+
+        logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
+                            , stream=sys.stdout, level=logging.DEBUG)
+        self.logger = logging.getLogger(__name__)
         
     def connect(self, user_id, group_id='base'):
         response = intercom.connect_user(self.ip, self.port
                 , params={'user_id': user_id, 'group_id': group_id})
-        if (response['connected']==True):
+        if response['connected']:
             self.user_id = user_id
             self.group_id = group_id
-            self.params = {'user_id': self.user_id, 'group_id': self.group_id}
+            self._update_params()
+            self.taskManager.submit(
+                self.taskManager.executor.submit(self.finished_task_thread, )
+            )
             return True
         else:
             return False
+
+    def _update_params(self):
+        self.params = {'user_id': self.user_id
+                    , 'group_id': self.group_id}
         
     #EXECUTOR METHODS HERE####################
     
@@ -217,17 +245,42 @@ class ClusterExecutor(NodeInterface):
         task.fn = fn
         task.args = args
         task.kwargs = kwargs
-        self.add_task(task)
+        with self._condition:
+            self.add_task(task)
+            self.add_executor_task(task)
         return task
         
     def map(self, func, *iterables, timeout=None, chuncksize=1):
         self.logger.debug('map function')
+
+    def as_completed(self):
+        return concurrent.futures.as_completed(self.executor_tasks_sent)
         
     def shutdown(self, wait=True):
         self.logger.debug('shutdown()')
-        self.server_loop.call_soon_threadsafe(self.server_loop.stop)
+        #self.server_loop.call_soon_threadsafe(self.server_loop.stop)
     
     ##########################################
+
+    def add_task(self, task):
+        self.logger.debug('C <--- U task: %s' % task)
+        response = intercom.post_task(self.ip, self.port, task, params=self.params)
+        if response['task_added']:
+            with self._condition:
+                self.tasks_sent[task.task_id] = task
+            return True
+        else:
+            return False
+
+    def add_executor_task(self, task):
+        with self._condition:
+            self.executor_tasks_sent.append(task)
+
+    def find_executor_task_by_id(self, task_id):
+        for task in self.executor_tasks_sent:
+            if task.task_id == task_id:
+                return task
+        return None
         
     def get_finished_task_list(self):
         response = intercom.get_finished_task_list(self.ip, self.port
@@ -237,18 +290,17 @@ class ClusterExecutor(NodeInterface):
     def get_single_task(self):
         response = intercom.get_single_task(self.ip, self.port, params=self.params)
         return response
-    
-    def update_tasks_sent(self):
-        response = self.get_finished_task_list()
-        for task in response:
-            task.unpickleInnerData()
-            task.new_condition()
+
+    def finished_task_thread(self):
+        self.logger.debug('*** Started the finished_task_thread')
+        while True:
+            task = self.get_single_task()
+            self.logger.debug('C ---> U task: %s' % task)
             if task.task_id in self.tasks_sent:
-                self.tasks_sent[task.task.task_id].update(task)
-            #for task_sent in self.tasks_sent:
-            #    if (task_sent.task_id==task.task_id):
-            #        task_sent.update(task)
-            #        break
+                with self._condition:
+                    self.tasks_sent[task.task_id].update(task)
+                    executor_task = self.find_executor_task_by_id(task.task_id)
+                    executor_task.update(task)
         
     def __str__(self):
         return ('ip: %s, port: %s, user_id: %s, group_id: %s' 

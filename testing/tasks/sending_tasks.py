@@ -41,7 +41,7 @@ def start_node():
     
 def ex(a,b):
     time.sleep(0.001)
-    return [True,a,b]
+    return [True, a, b]
     
 def send_tasks(tasks_needed):
     logger.debug('sending messages (PROCESS 2)')
@@ -54,25 +54,27 @@ def send_tasks(tasks_needed):
     #send a message to the node
     for i in range(0,tasks_needed): #add three tasks
         added = cluster.submit(ex, i,2)
-        logger.debug('task added: %s' % added)
         
     logger.debug('sent %d tasks' % tasks_needed)
-    logger.debug('====Wait for Counts====')
-    time.sleep(1)
-    counts = cluster.update_counts()
-    logger.debug('counts: %s' % counts)
+    #logger.debug('====Wait for Counts====')
+    #time.sleep(1)
+    #counts = cluster.update_counts()
+    #logger.debug('counts: %s' % counts)
     
     logger.debug('====Tasks====')
     task_count_conf = 0
-    while (True):
-        cluster.get_single_task()
+    logger.debug('len(cluster.executor_tasks_sent): %d' % len(cluster.executor_tasks_sent))
+    for task in cluster.as_completed():
         task_count_conf += 1
-        #logger.debug('task: %s' % cluster.get_single_task())
         logger.info('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, SUCCESS: %s\x1b[0m' % 
                 (tasks_needed, task_count_conf, (tasks_needed==task_count_conf)))
         if (task_count_conf==tasks_needed):
             break
-        #time.sleep(0.1)
+
+    logger.debug('len(cluster.tasks_sent): %d' % len(cluster.tasks_sent))
+    for task in cluster.executor_tasks_sent:
+        logger.debug('task: %s' % task)
+
     '''
     cluster.update_tasks_sent()        
     gen = concurrent.futures.as_completed(cluster.tasks_sent)
@@ -91,7 +93,7 @@ def send_tasks(tasks_needed):
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 16
+    tasks_needed = 12
     
     #send_tasks(tasks_needed)
 
