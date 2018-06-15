@@ -53,7 +53,7 @@ def send_tasks(tasks_needed):
     logger.debug('sending the task...')
     #send a message to the node
     for i in range(0,tasks_needed): #add three tasks
-        added = cluster.submit(ex, i,2)
+        _ = cluster.submit(ex, i,2)
         
     logger.debug('sent %d tasks' % tasks_needed)
     #logger.debug('====Wait for Counts====')

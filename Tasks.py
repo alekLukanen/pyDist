@@ -72,7 +72,7 @@ class Task(concurrent.futures._base.Future):
     #   CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, RUNNING,
     
     def __init__(self):
-        #concurrent.futures.Future.__init__(self)
+        concurrent.futures.Future.__init__(self)
         self.cluster_trace = []
         self.task_id = uuid.uuid4()
         self.interface_id = None
@@ -100,9 +100,10 @@ class Task(concurrent.futures._base.Future):
         self.fn = task.fn
         self.args = task.args
         self.kwargs = task.kwargs
-        
+
         self._state = task._state
-        self._result = task._result
+        #self._result = task._result
+        self.set_result(task._result)
         self._exception = task._exception
         self._waiters = task._waiters
         self._done_callbacks = task._done_callbacks
@@ -133,7 +134,7 @@ class Task(concurrent.futures._base.Future):
         return pickleFunctions.unPickleServer(var)
     
     def pickleInnerData(self):
-        if (self._pickled_inner==False):
+        if self._pickled_inner == False:
             self.fn = self.pickleVariable(self.fn)
             self.args = self.pickleVariable(self.args)
             self.kwargs = self.pickleVariable(self.kwargs)
@@ -141,7 +142,7 @@ class Task(concurrent.futures._base.Future):
             self._pickled_inner = True
     
     def unpickleInnerData(self):
-        if (self._pickled_inner==True):
+        if self._pickled_inner:
             self.fn = self.unpickleVariable(self.fn)
             self.args = self.unpickleVariable(self.args)
             self.kwargs = self.unpickleVariable(self.kwargs)
@@ -149,11 +150,33 @@ class Task(concurrent.futures._base.Future):
             self._pickled_inner = False
     
     def pickle(self):
-        con = self._condition
-        self._condition = None
-        pickle = pickleFunctions.createPickleServer(self)
-        self._condition = con
+        #con = self._condition
+        #self._condition = None
+        task_copy = self._create_copy_without_condition()
+        pickle = pickleFunctions.createPickleServer(task_copy)
+        #self._condition = con
         return pickle
+
+    def _create_copy_without_condition(self):
+        task_copy = Task()
+        task_copy.cluster_trace = self.cluster_trace
+        task_copy.task_id = self.task_id
+        task_copy.interface_id = self.interface_id
+
+        task_copy.flag = self.flag
+        task_copy.id = self.id
+        task_copy.fn = self.fn
+        task_copy.args = self.args
+        task_copy.kwargs = self.kwargs
+
+        task_copy._condition = None
+        task_copy._state = self._state
+        task_copy._result = self._result
+        task_copy._exception = self._exception
+        task_copy._waiters = self._waiters
+        task_copy._done_callbacks = self._done_callbacks
+        task_copy._pickled_inner = self._pickled_inner
+        return task_copy
     
     def createDictionary(self):
         return {'data': self.pickle()}

@@ -301,6 +301,7 @@ class ClusterExecutor(object):
                     self.tasks_sent[task.task_id].update(task)
                     executor_task = self.find_executor_task_by_id(task.task_id)
                     executor_task.update(task)
+                    self.logger.debug("* %d" % len(self.executor_tasks_sent))
         
     def __str__(self):
         return ('ip: %s, port: %s, user_id: %s, group_id: %s' 
