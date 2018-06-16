@@ -40,7 +40,7 @@ def start_node():
     node = Nodes.ClusterNode()
     for i in range(0,3):
         task = node.taskManager.executor.submit(run_this,i)
-        task.add_done_callback(node.task_finished_callback)
+        task.add_done_callback(node.work_item_finished_callback)
         node.taskManager.submit(task)
     #node.start_updating()
     #node.boot('0.0.0.0', 9000)

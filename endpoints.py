@@ -23,7 +23,7 @@ async def index(request):
 
 async def addTask(request):
     logger.debug('/addTask')
-    request_data = json.loads( await request.text() )
+    request_data = json.loads(await request.text())
     data = node.add_existing_task(request_data)
     return web.Response(body=data)
 
@@ -58,5 +58,5 @@ async def connectUser(request):
 async def getSingleTask(request):
     logger.debug('/getSingleTask')
     params = request.rel_url.query
-    task = await node.get_a_finished_task(params)
+    task = await node.get_a_finished_work_item(params)
     return web.Response(body=task)

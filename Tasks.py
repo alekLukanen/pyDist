@@ -34,161 +34,122 @@ _TASK_STATES = [
 ]
 
 #use this function to call the users function
-def caller_helper(task):
+def caller_helper(work_item):
     #unpickle the users function here
-    task.unpickleInnerData()
-    #need to set the condition for this unpickle(new) object
-    task.new_condition()
-    #call the users function
-    task.set_result(task.fn(*task.args, **task.kwargs))
-    #repickle the function
-    task.pickleInnerData()
-    task.set_run()
-    task.remove_condition()
-    
-    return task
-    
+    work_item.unpickleInnerData()
 
-class WorkerItem(object):
+    #call the users function
+    work_item.set_result(work_item.fn(*work_item.args, **work_item.kwargs))
+    work_item.set_ran()
+
+    #repickle the function
+    work_item.pickleInnerData()
     
-    def __init__(self, future, fn, args, kwargs):
-        self.future = future
+    return work_item
+
+
+class ClusterItem(object):
+
+    def __init__(self):
+        self.cluster_trace = []
+        self.item_id = uuid.uuid4()
+        self.interface_id = None
+
+
+class WorkerItem(ClusterItem):
+    
+    def __init__(self, fn, args, kwargs):
+        ClusterItem.__init__(self)
+
         self.fn = fn
         self.args = args
         self.kwargs = kwargs
-
-
-class VariableItem(object):
-    
-    def __init__(self, variable, ip, port):
-        self.variable = variable
-        self.ip = ip
-        self.port = port
-
-#the base task will be used as a simple version of the full task.
-#class Task(concurrent.futures.Future):
-class Task(concurrent.futures._base.Future):
-    #states:
-    #   CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, RUNNING,
-    
-    def __init__(self):
-        concurrent.futures.Future.__init__(self)
-        self.cluster_trace = []
-        self.task_id = uuid.uuid4()
-        self.interface_id = None
-        
         self.flag = None
         self.id = None
-        self.fn = None
-        self.args = ()
-        self.kwargs = {}
-        
-        self._condition = threading.Condition()
-        self._state = PENDING
-        self._result = None
-        self._exception = None
-        self._waiters = []
-        self._done_callbacks = []
-        self._pickled_inner = False
-        
-    def update(self, task):
-        self.cluster_trace = task.cluster_trace
-        self.task_id = task.task_id
-        self.interface_id = task.interface_id
-        self.flag = task.flag
-        self.id = task.id
-        self.fn = task.fn
-        self.args = task.args
-        self.kwargs = task.kwargs
 
-        self._state = task._state
-        #self._result = task._result
-        self.set_result(task._result)
-        self._exception = task._exception
-        self._waiters = task._waiters
-        self._done_callbacks = task._done_callbacks
-        self._pickled_inner = task._pickled_inner
-        
-    def new_condition(self):
-        self._condition = threading.Condition()
-        
-    def remove_condition(self):
-        self._condition = None
-        
-    def pickled_inner(self):
-        return self._pickled_inner
-        
-    def exception(self):
-        return self._exception
-        
-    def set_exception(self, exception):
-        self._exception = exception
-        
-    def set_run(self):
-        self._state = FINISHED
-        
+        self.ran = False
+        self.result = None
+        self._done_callbacks = []
+
+        self._pickled_inner = False
+
+    def set_ran(self):
+        self.ran = True
+
+    def set_result(self, result):
+        self.result = result
+
     def pickleVariable(self, var):
         return pickleFunctions.createPickleServer(var)
-        
+
     def unpickleVariable(self, var):
         return pickleFunctions.unPickleServer(var)
-    
+
     def pickleInnerData(self):
-        if self._pickled_inner == False:
+        if not self._pickled_inner:
             self.fn = self.pickleVariable(self.fn)
             self.args = self.pickleVariable(self.args)
             self.kwargs = self.pickleVariable(self.kwargs)
-            self._result = self.pickleVariable(self._result)
+            self.flag = self.pickleVariable(self.flag)
+            self.id = self.pickleVariable(self.id)
+            self.ran = self.pickleVariable(self.ran)
+            self.result = self.pickleVariable(self.result)
+            self._done_callbacks = self.pickleVariable(self._done_callbacks)
+
             self._pickled_inner = True
-    
+
     def unpickleInnerData(self):
         if self._pickled_inner:
             self.fn = self.unpickleVariable(self.fn)
             self.args = self.unpickleVariable(self.args)
             self.kwargs = self.unpickleVariable(self.kwargs)
-            self._result = self.unpickleVariable(self._result)
+            self.flag = self.unpickleVariable(self.flag)
+            self.id = self.unpickleVariable(self.id)
+            self.ran = self.unpickleVariable(self.ran)
+            self.result = self.unpickleVariable(self.result)
+            self._done_callbacks = self.unpickleVariable(self._done_callbacks)
+
             self._pickled_inner = False
-    
+
     def pickle(self):
-        #con = self._condition
-        #self._condition = None
-        task_copy = self._create_copy_without_condition()
-        pickle = pickleFunctions.createPickleServer(task_copy)
-        #self._condition = con
+        pickle = pickleFunctions.createPickleServer(self)
         return pickle
 
-    def _create_copy_without_condition(self):
-        task_copy = Task()
-        task_copy.cluster_trace = self.cluster_trace
-        task_copy.task_id = self.task_id
-        task_copy.interface_id = self.interface_id
+    def __str__(self):
+        return f'item_id: {self.item_id}, id(user defined): {self.id}, ran: {self.ran}, result: {self.result}'
 
-        task_copy.flag = self.flag
-        task_copy.id = self.id
-        task_copy.fn = self.fn
-        task_copy.args = self.args
-        task_copy.kwargs = self.kwargs
 
-        task_copy._condition = None
-        task_copy._state = self._state
-        task_copy._result = self._result
-        task_copy._exception = self._exception
-        task_copy._waiters = self._waiters
-        task_copy._done_callbacks = self._done_callbacks
-        task_copy._pickled_inner = self._pickled_inner
-        return task_copy
+class VariableItem(ClusterItem):
+    
+    def __init__(self, variable, ip, port):
+        ClusterItem.__init__(self)
+        self.variable = variable
+        self.ip = ip
+        self.port = port
+
+
+#the base task will be used as a simple version of the full task.
+class Task(object):
+    #states:
+    #   CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, RUNNING,
+    
+    def __init__(self, fn, args, kwargs):
+        self.work_item = WorkerItem(fn, args, kwargs) #cluster facing
+        self.future = concurrent.futures._base.Future() #user facing
+        
+    def update(self, work_item):
+        self.work_item = work_item
+        self.future.set_result(self.work_item.result)
+
+    def pickle(self):
+        pickle = pickleFunctions.createPickleServer(self.work_item)
+        return pickle
     
     def createDictionary(self):
         return {'data': self.pickle()}
-        
-    def convert_obj_to_dictionary(self, obj):
-        if (obj!=None):
-            return obj.convert_to_dictionary()
-        return None
     
     def __str__(self):
-        return ("task_id: %s, interface_id: %s, id(userDef): %s, state: %s, cluster_trace: %s"
-                % (self.task_id, self.interface_id, self.id, self._state,self.cluster_trace))
+        return self.work_item.__str__()
     
 if __name__ == '__main__':
     task = Task()

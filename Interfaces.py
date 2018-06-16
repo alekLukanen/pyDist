@@ -47,46 +47,46 @@ class InterfaceHolder(object):
     def find_user_by_user_id(self, user_id):
         return self.user_interfaces[user_id] if user_id in self.user_interfaces else None
         
-    def find_user_task(self):
+    def find_user_work_item(self):
         for user_id in self.user_interfaces:
             user = self.user_interfaces[user_id]
-            if (len(user.tasks_recieved)>0):
-                task = user.tasks_recieved.pop()
-                return user, task
+            if len(user.work_items_received)>0:
+                work_item = user.work_items_received.pop()
+                return user, work_item
         return None, None
     
-    def update_task_in_user(self, task):
+    def update_work_item_in_user(self, work_item):
         with self._condition:
             for user_id in self.user_interfaces:
                 user = self.user_interfaces[user_id]
-                if user.interface_id==task.interface_id:
-                    user.tasks_running.remove(task.task_id)
-                    user.finished_task(task)
-                    self.remove_task_in_user_by_task_id(user, task.task_id)
+                if user.interface_id == work_item.interface_id:
+                    user.work_items_running.remove(work_item.item_id)
+                    user.finished_work_item(work_item)
+                    self.remove_work_item_in_user_by_item_id(user, work_item.item_id)
                     return True
             return False
     
     def find_user_by_interface_id(self, interface_id):
         for user_id in self.user_interfaces:
             user = self.user_interfaces[user_id]
-            if user.interface_id==interface_id:
+            if user.interface_id == interface_id:
                 return user
         return None
     
-    def remove_task_in_user_by_task_id(self, user, task_id):
+    def remove_work_item_in_user_by_item_id(self, user, item_id):
         with self._condition:
-            for task_rec in user.tasks_recieved:
-                if task_rec.task_id == task_id:
-                    user.tasks_recieved.remove(task_rec)
+            for work_item in user.work_items_received:
+                if work_item.item_id == item_id:
+                    user.work_items_received.remove(work_item)
                     
-    async def wait_for_first_finished_task_for_user(self, user):
+    async def wait_for_first_finished_work_item_for_user(self, user):
         await user._finished_event.wait()
         
-    def find_finished_task_for_user(self, user):
-        for task in user.tasks_finished:
-            if task.done():
-                user.tasks_finished.remove(task)
-                return task
+    def find_finished_work_item_for_user(self, user):
+        for work_item in user.work_items_finished:
+            if work_item.ran:
+                user.work_items_finished.remove(work_item)
+                return work_item
         return None
     
     def reset_finished_event_for_user(self, user):
@@ -104,31 +104,32 @@ class UserInterface(object):
         self.interface_id = uuid.uuid4()
         self.user_id = user_id
         self.group_id = group_id
-        self.tasks_recieved = []
-        self.tasks_running  = []
-        self.tasks_finished = []
+
+        self.work_items_received = []
+        self.work_items_running = []
+        self.work_items_finished = []
         
         self._condition = threading.Condition()
         self._finished_event = asyncio.Event()
         self._finished_event.clear()
         
-    def finished_task(self, task):
+    def finished_work_item(self, work_item):
         with self._condition:
-            self.tasks_finished.append(task)
+            self.work_items_finished.append(work_item)
             self._finished_event.set()
         
     def reset_finished_event(self):
         with self._condition:
-            if (len(self.tasks_finished)==0):
+            if (len(self.work_items_finished)==0):
                 self._finished_event.clear()
             else:
                 self._finished_event.set()
        
     def counts(self):
-        return ('#recv: %d, #running: %d, #fin: %d' 
-                % (len(self.tasks_recieved)
-                , len(self.tasks_running)
-                , len(self.tasks_finished)))
+        return ('#recv: %d, #running: %d, #fin: %d'
+                % (len(self.work_items_received)
+                , len(self.work_items_running)
+                , len(self.work_items_finished)))
         
     def __str__(self): 
         return ('user_id: %s, group_id: %s' 
@@ -205,7 +206,7 @@ class ClusterExecutor(object):
         self.params = {}
 
         self.tasks_sent = {}
-        self.executor_tasks_sent = []
+        self.futures = []
 
         #need to create thread here that waits for
         #finished task on the Node.
@@ -226,7 +227,7 @@ class ClusterExecutor(object):
             self.group_id = group_id
             self._update_params()
             self.taskManager.submit(
-                self.taskManager.executor.submit(self.finished_task_thread, )
+                self.taskManager.executor.submit(self.finished_work_item_thread, )
             )
             return True
         else:
@@ -241,20 +242,17 @@ class ClusterExecutor(object):
     #submit a new job here
     #this is where a new task needs to be created
     def submit(self, fn, *args, **kwargs):
-        task = Tasks.Task()
-        task.fn = fn
-        task.args = args
-        task.kwargs = kwargs
+        task = Tasks.Task(fn, args, kwargs)
         with self._condition:
             self.add_task(task)
-            self.add_executor_task(task)
+            self.add_future(task.future)
         return task
         
     def map(self, func, *iterables, timeout=None, chuncksize=1):
         self.logger.debug('map function')
 
     def as_completed(self):
-        return concurrent.futures.as_completed(self.executor_tasks_sent)
+        return concurrent.futures.as_completed(self.futures)
         
     def shutdown(self, wait=True):
         self.logger.debug('shutdown()')
@@ -267,41 +265,32 @@ class ClusterExecutor(object):
         response = intercom.post_task(self.ip, self.port, task, params=self.params)
         if response['task_added']:
             with self._condition:
-                self.tasks_sent[task.task_id] = task
+                self.tasks_sent[task.work_item.item_id] = task
+                self.futures.append(task.future)
             return True
         else:
             return False
 
-    def add_executor_task(self, task):
-        with self._condition:
-            self.executor_tasks_sent.append(task)
-
-    def find_executor_task_by_id(self, task_id):
-        for task in self.executor_tasks_sent:
-            if task.task_id == task_id:
-                return task
-        return None
+    def add_future(self, future):
+        self.futures.append(future)
         
     def get_finished_task_list(self):
         response = intercom.get_finished_task_list(self.ip, self.port
                                         , params=self.params)
         return response
     
-    def get_single_task(self):
+    def get_single_work_item(self):
         response = intercom.get_single_task(self.ip, self.port, params=self.params)
         return response
 
-    def finished_task_thread(self):
+    def finished_work_item_thread(self):
         self.logger.debug('*** Started the finished_task_thread')
         while True:
-            task = self.get_single_task()
-            self.logger.debug('C ---> U task: %s' % task)
-            if task.task_id in self.tasks_sent:
+            work_item = self.get_single_work_item()
+            self.logger.debug('C ---> U task: %s' % work_item)
+            if work_item.item_id in self.tasks_sent:
                 with self._condition:
-                    self.tasks_sent[task.task_id].update(task)
-                    executor_task = self.find_executor_task_by_id(task.task_id)
-                    executor_task.update(task)
-                    self.logger.debug("* %d" % len(self.executor_tasks_sent))
+                    self.tasks_sent[work_item.item_id].update(work_item)
         
     def __str__(self):
         return ('ip: %s, port: %s, user_id: %s, group_id: %s' 

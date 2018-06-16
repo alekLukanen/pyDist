@@ -68,10 +68,10 @@ class TaskManager(object):
                 return True
         return False
     
-    def remove_task_from_task_list_by_id(self, task):
+    def remove_work_item_from_task_list_by_id(self, work_item):
         for future in self.tasks:
-            if (future.done()==True or future.running()==False):
-                if (future.result().task_id==task.task_id):
+            if future.done()==True or future.running()==False:
+                if future.result().item_id == work_item.item_id:
                     self.tasks.remove(future)
                     return True
         return False
@@ -81,7 +81,7 @@ class TaskManager(object):
             task_object = self.queued_tasks.pop()
             self.logger.debug('running queued task: %s' % task_object.task_id)
             task = self.executor.submit(Tasks.caller_helper, task_object)
-            task.add_done_callback(node.task_finished_callback)
+            task.add_done_callback(node.work_item_finished_callback)
             self.submit(task)
             self.user_tasks.append(task_object)
             return True
