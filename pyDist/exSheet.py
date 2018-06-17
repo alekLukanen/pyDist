@@ -12,20 +12,22 @@ import importlib
 from tempfile import TemporaryFile
 from numba import jit
 
+
 def printPi():
     print ('-* this is py: ', np.pi)
     tm.sleep(1)
     return np.pi
-    
+
+
 def printArg(arg0,arg1,arg2):
     answer = arg0+arg1+arg2
     #print ('- answer: ', answer)
     #tm.sleep(0.001)
     return (arg0,arg1,arg2,answer)    
-    
-@jit
+
+
 def estimatePi(n):
-    inside=0
+    inside = 0
     np.random.seed()
     for i in range(0,n):
         x=np.random.random_sample()
@@ -35,26 +37,32 @@ def estimatePi(n):
     pi = 4.0 * inside / n
     return pi
 
+
 def call_ep(object_value):
     return estimatePi(object_value.n)
-    
+
+
 def pickleObj(fileName,job,data):
     with open(fileName,'w') as f:
         pickle.dump([job,data],f)
-    
+
+
 def unpickleObj(fileName):
     with open(fileName) as f:
         return pickle.load(f)
-        
+
+
 def pickleObjTemp(job,data):
     outfile = TemporaryFile()
     pickle.dump([job,data],outfile)
     outfile.seek(0)
     return outfile
 
+
 def unpickleObjTemp(outfile):
     return pickle.load(outfile)
-        
+
+
 def call(className,methodName,args):
     print ('___________________')
     i = importlib.import_module('exSheet')
@@ -64,7 +72,8 @@ def call(className,methodName,args):
         func(*args)
     except Exception as e:
         print ('call[error]: ',e)
-    
+
+
 if __name__ == '__main__':
     #estimatePi()
     a = ((1,2,3),1,np.zeros(5))

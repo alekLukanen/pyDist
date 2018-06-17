@@ -15,9 +15,8 @@ import sys
 from pyDist import Interfaces, Nodes
 from pyDist.TaskManager import TaskManager
 
-#change these up for use in other cases
-taskManager = TaskManager()
-taskManager.executor = concurrent.futures.ThreadPoolExecutor(1)
+from pyDist import exSheet
+
 
 #logging utility
 logging.getLogger("Nodes").setLevel(logging.WARNING)
@@ -33,10 +32,12 @@ def start_node():
     node.boot('0.0.0.0', 9000)
     logger.debug('node stopped')
     return node
-    
+
+
 def ex(a,b):
     time.sleep(0.001)
     return [True, a, b]
+
     
 def submit_test(tasks_needed):
     logger.debug('sending tasks using submit')
@@ -48,18 +49,19 @@ def submit_test(tasks_needed):
     logger.debug('sending the task...')
     #send a message to the node
     for i in range(0,tasks_needed): #add three tasks
-        _ = cluster.submit(ex, i,2)
-        
-    logger.debug('sent %d tasks' % tasks_needed)
+        _ = cluster.submit(exSheet.estimatePi, 10_000)
 
-    logger.debug('====Tasks====')
     task_count_conf = 0
-    for task in cluster.as_completed():
+    pi_est = 0.0
+    for task in [f for f in cluster.as_completed()]:
         task_count_conf += 1
+        pi_est += task.result()
         logger.info('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, RESULT: %s\x1b[0m' %
                     (tasks_needed, task_count_conf, task))
 
     assert task_count_conf == tasks_needed
+
+    logger.info(f'Estimate of pi: {pi_est/tasks_needed}')
 
     cluster.disconnect()
     logger.debug('finished the submit test')
@@ -73,16 +75,21 @@ def map_test(tasks_needed, chuncksize=1):
     cluster.connect('map_test')
 
     logger.debug('mapping the tasks...')
-    results = cluster.map(ex, range(0, tasks_needed), range(tasks_needed), chunksize=chuncksize)
+    results = cluster.map(exSheet.estimatePi, [10_000 for i in range(0, tasks_needed)], chunksize=chuncksize)
 
     task_count_conf = 0
+    pi_est = 0.0
     for result in [res for res in results]:
         task_count_conf += len(result)
         logger.info('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, RESULT: %s\x1b[0m' %
                     (tasks_needed, task_count_conf, result))
+        for est in result:
+            pi_est += est
         #logger.info(f'result: {result}')
 
     assert task_count_conf == tasks_needed
+
+    logger.info(f'Estimate of pi: {pi_est/tasks_needed}')
 
     cluster.disconnect()
     logger.info('finished the map test')
@@ -91,9 +98,20 @@ def map_test(tasks_needed, chuncksize=1):
 if __name__ == '__main__':
     logger.debug('basic ClusterExecutor tests')
     
-    tasks_needed = 100
+    tasks_needed = 200
 
-    #submit_test(tasks_needed)
-    map_test(tasks_needed, chuncksize=20)
+    start_submit_time = time.time()
+    submit_test(tasks_needed)
+    end_submit_time = time.time()
+    submit_run_time = end_submit_time - start_submit_time
 
-    logger.debug('Ened the test...')
+    start_map_time = time.time()
+    map_test(tasks_needed, chuncksize=50)
+    end_map_time = time.time()
+    map_run_time = end_map_time - start_map_time
+
+    logger.debug('Ended the test...')
+    logger.debug('\x1b[31m--- TEST SUMMARY ---\x1b[0m')
+    logger.debug(f'\x1b[31m-* tasks_needed: {tasks_needed}\x1b[0m')
+    logger.debug(f'\x1b[31m-* submit ran in: {submit_run_time}\x1b[0m')
+    logger.debug(f'\x1b[31m-* map ran in: {map_run_time}\x1b[0m')
