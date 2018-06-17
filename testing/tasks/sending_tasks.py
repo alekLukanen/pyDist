@@ -38,12 +38,12 @@ def ex(a,b):
     time.sleep(0.001)
     return [True, a, b]
     
-def send_tasks(tasks_needed):
-    logger.debug('sending messages (PROCESS 2)')
+def submit_test(tasks_needed):
+    logger.debug('sending tasks using submit')
     
     time.sleep(1.0)
     cluster = Interfaces.ClusterExecutor('0.0.0.0', 9000)
-    cluster.connect('testing_user')
+    cluster.connect('submit_test')
     
     logger.debug('sending the task...')
     #send a message to the node
@@ -56,17 +56,44 @@ def send_tasks(tasks_needed):
     task_count_conf = 0
     for task in cluster.as_completed():
         task_count_conf += 1
-        logger.info('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, SUCCESS: %s\x1b[0m' % 
-                (tasks_needed, task_count_conf, (tasks_needed==task_count_conf)))
+        logger.info('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, RESULT: %s\x1b[0m' %
+                    (tasks_needed, task_count_conf, task))
+
+    assert task_count_conf == tasks_needed
 
     cluster.disconnect()
-    logger.debug('finished with sending and receiving tasks')
+    logger.debug('finished the submit test')
+
+
+def map_test(tasks_needed, chuncksize=1):
+    logger.debug('sending tasks using map')
+
+    time.sleep(1.0)
+    cluster = Interfaces.ClusterExecutor('0.0.0.0', 9000)
+    cluster.connect('map_test')
+
+    logger.debug('mapping the tasks...')
+    results = cluster.map(ex, range(0, tasks_needed), range(tasks_needed), chunksize=chuncksize)
+
+    task_count_conf = 0
+    for result in [res for res in results]:
+        task_count_conf += len(result)
+        logger.info('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, RESULT: %s\x1b[0m' %
+                    (tasks_needed, task_count_conf, result))
+        #logger.info(f'result: {result}')
+
+    assert task_count_conf == tasks_needed
+
+    cluster.disconnect()
+    logger.info('finished the map test')
+
 
 if __name__ == '__main__':
-    logger.debug('basic task sending test')
+    logger.debug('basic ClusterExecutor tests')
     
-    tasks_needed = 100
+    tasks_needed = 1000
 
-    send_tasks(tasks_needed)
+    #submit_test(tasks_needed)
+    map_test(tasks_needed, chuncksize=10)
 
     logger.debug('Ened the test...')

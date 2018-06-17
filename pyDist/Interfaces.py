@@ -13,6 +13,9 @@ import sys
 import threading
 import asyncio
 import concurrent
+from concurrent.futures import _base
+from concurrent.futures import process
+from functools import partial
 
 from pyDist import intercom, Tasks
 
@@ -196,7 +199,7 @@ class NodeInterface(object):
         return self.num_running
 
 
-class ClusterExecutor(object):
+class ClusterExecutor(_base.Executor):
     
     def __init__(self, ip, port):
         self.ip = ip
@@ -209,13 +212,12 @@ class ClusterExecutor(object):
         self.futures = []
 
         self.worker_loop = None
-        self.event_loop = asyncio.new_event_loop()
-
-        #need to create thread here that waits for
-        #finished task on the Node.
+        self.event_loop = asyncio.get_event_loop()
         self.worker_thread = None
 
         self._condition = threading.Condition()
+        self._work_item_sent = threading.Event()
+        self._closed = threading.Event()
 
         logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                             , stream=sys.stdout, level=logging.DEBUG)
@@ -238,6 +240,7 @@ class ClusterExecutor(object):
             return False
 
     def disconnect(self):
+        self._closed.set()
         self.worker_loop.call_soon_threadsafe(self.stop_worker_loop)
         self.worker_thread.join()
         self.logger.debug('worker_thread: %s' % self.worker_thread)
@@ -257,12 +260,23 @@ class ClusterExecutor(object):
     def submit(self, fn, *args, **kwargs):
         task = Tasks.Task(fn, args, kwargs)
         with self._condition:
-            self.add_task(task)
-            self.add_future(task.future)
-        return task
+            task_added = self.add_task(task)
+            if task_added:
+                self.add_future(task.future)
+                self._work_item_sent.set()
+            else:
+                return None
+        return task.future
         
-    def map(self, func, *iterables, timeout=None, chuncksize=1):
+    def map(self, fn, *iterables, timeout=None, chunksize=1):
         self.logger.debug('map function')
+        if chunksize < 1:
+            raise ValueError("chunksize must be >= 1.")
+
+        results = super().map(partial(process._process_chunk, fn),
+                              process._get_chunks(*iterables, chunksize=chunksize),
+                              timeout=timeout)
+        return results
 
     def as_completed(self):
         return concurrent.futures.as_completed(self.futures)
@@ -291,20 +305,29 @@ class ClusterExecutor(object):
         self.logger.debug('*** Started the finished_task_thread')
         while True:
             try:
+                self._work_item_sent.wait()
+                if self._closed.is_set():
+                    break
                 work_item = await intercom.get_single_task(self.ip, self.port, params=self.params)
             except RuntimeError as e:
                 self.logger.error('Error in finished work item process')
+                if self._closed.is_set():
+                    break
             self.logger.debug('C ---> U task: %s' % work_item)
             if work_item.item_id in self.tasks_sent:
                 with self._condition:
                     self.tasks_sent[work_item.item_id].update(work_item)
+        self.logger.debug('*** Ended the finished_task_thread')
 
     def event_loop_worker(self, loop):
         self.logger.debug('*** start of loop worker')
         asyncio.set_event_loop(loop)
-        asyncio.ensure_future(self.finished_work_item_thread())
+        #asyncio.run_until_complete(self.finished_work_item_thread())
         try:
-            loop.run_forever()
+            #loop.run_forever()
+            loop.run_until_complete(self.finished_work_item_thread())
+        except RuntimeError as e:
+            self.logger.error('*** stopped updating work items (should be here)')
         finally:
             loop.run_until_complete(loop.shutdown_asyncgens())
             loop.close()
