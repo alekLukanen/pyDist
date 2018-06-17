@@ -209,7 +209,7 @@ class ClusterExecutor(object):
         self.futures = []
 
         self.worker_loop = None
-        self.event_loop = asyncio.get_event_loop()
+        self.event_loop = asyncio.new_event_loop()
 
         #need to create thread here that waits for
         #finished task on the Node.

@@ -65,15 +65,8 @@ def send_tasks(tasks_needed):
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 160
-    
-    #send_tasks(tasks_needed)
+    tasks_needed = 100
 
-    #taskManager.tasks.append(
-    #            taskManager.executor.submit(send_tasks,tasks_needed))
-
-    #start_node()
     send_tasks(tasks_needed)
 
     logger.debug('Ened the test...')
-    exit()

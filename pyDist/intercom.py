@@ -29,22 +29,27 @@ async def post_request(location, data, headers={"Content-Type":"application/json
 
 
 async def get_json_request(location, params={}):
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(location, params=params) as response:
-                return await response.json()
-        except aiohttp.client_exceptions.ClientConnectorError:
-            return {}
+    try:
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(location, params=params) as response:
+                    return await response.json()
+            except aiohttp.client_exceptions.ClientConnectorError:
+                return {}
+    except ValueError:
+        return {}
 
 
 async def post_json_request(location, data, headers={"Content-Type":"application/json"}):
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.post(location, json=data, headers=headers) as response:
-                return await response.json()
-        except aiohttp.client_exceptions.ClientConnectorError:
-            return {}
-
+    try:
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.post(location, json=data, headers=headers) as response:
+                    return await response.json()
+            except aiohttp.client_exceptions.ClientConnectorError:
+                return {}
+    except ValueError:
+        return {}
 
 ##############################
 ##############################
