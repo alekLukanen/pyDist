@@ -92,7 +92,9 @@ class ClusterNode(object):
 
         user = self.interfaces.find_user_by_user_id(params['user_id'])
         if user!=None:
-            await self.interfaces.wait_for_first_finished_work_item_for_user(user)
+            self.logger.debug(f'*** waiting for finished task: user: {user}')
+            await self.server_loop.run_in_executor(None, self.interfaces.wait_for_first_finished_work_item_for_user, user)
+            self.logger.debug('*** found finished task')
             work_item = self.interfaces.find_finished_work_item_for_user(user)
             self.interfaces.reset_finished_event_for_user(user)
             if work_item!=None:
@@ -208,6 +210,7 @@ class ClusterNode(object):
         t_updated = self.interfaces.update_work_item_in_user(work_item) #self.taskManager.update_task_by_id(returned_task)
         t_removed = self.taskManager.remove_work_item_from_task_list_by_id(work_item)
         t_added   = self.run_task_from_user()
+
         #show warning messages when necessary
         self.logger.debug('user.counts(): %s' 
                 % self.interfaces.find_user_by_interface_id(work_item.interface_id).counts())

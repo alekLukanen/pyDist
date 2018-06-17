@@ -55,13 +55,14 @@ class InterfaceHolder(object):
                 return user, work_item
         return None, None
     
-    def update_work_item_in_user(self, work_item):
+    def update_work_item_in_user(self, work_item, ):
         with self._condition:
             for user_id in self.user_interfaces:
                 user = self.user_interfaces[user_id]
                 if user.interface_id == work_item.interface_id:
                     user.work_items_running.remove(work_item.item_id)
                     user.finished_work_item(work_item)
+                    self.logger.debug(f'job finished event: {user._finished_event}')
                     self.remove_work_item_in_user_by_item_id(user, work_item.item_id)
                     return True
             return False
@@ -79,8 +80,8 @@ class InterfaceHolder(object):
                 if work_item.item_id == item_id:
                     user.work_items_received.remove(work_item)
                     
-    async def wait_for_first_finished_work_item_for_user(self, user):
-        await user._finished_event.wait()
+    def wait_for_first_finished_work_item_for_user(self, user):
+        user._finished_event.wait()
         
     def find_finished_work_item_for_user(self, user):
         for work_item in user.work_items_finished:
@@ -110,8 +111,7 @@ class UserInterface(object):
         self.work_items_finished = []
         
         self._condition = threading.Condition()
-        self._finished_event = asyncio.Event()
-        self._finished_event.clear()
+        self._finished_event = threading.Event()
         
     def finished_work_item(self, work_item):
         with self._condition:
@@ -209,6 +209,7 @@ class ClusterExecutor(_base.Executor):
         self.params = {}
 
         self.tasks_sent = {}
+        self.tasks_pending = {}
         self.futures = []
 
         self.worker_loop = None
@@ -262,10 +263,7 @@ class ClusterExecutor(_base.Executor):
         with self._condition:
             task_added = self.add_task(task)
             if task_added:
-                self.add_future(task.future)
                 self._work_item_sent.set()
-            else:
-                return None
         return task.future
         
     def map(self, fn, *iterables, timeout=None, chunksize=1):
@@ -293,9 +291,12 @@ class ClusterExecutor(_base.Executor):
         if 'task_added' in response and response['task_added']:
             with self._condition:
                 self.tasks_sent[task.work_item.item_id] = task
-                self.futures.append(task.future)
+                self.add_future(task.future)
             return True
         else:
+            with self._condition:
+                self.tasks_pending[task.work_item.item_id] = task
+                self.add_future(task.future)
             return False
 
     def add_future(self, future):

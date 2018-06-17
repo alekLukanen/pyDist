@@ -91,9 +91,9 @@ def map_test(tasks_needed, chuncksize=1):
 if __name__ == '__main__':
     logger.debug('basic ClusterExecutor tests')
     
-    tasks_needed = 1000
+    tasks_needed = 100
 
     #submit_test(tasks_needed)
-    map_test(tasks_needed, chuncksize=10)
+    map_test(tasks_needed, chuncksize=20)
 
     logger.debug('Ened the test...')
