@@ -17,10 +17,10 @@ import asyncio
 from TaskManager import TaskManager
 
 def start_node():
-    print ('starting the node (PROCESS MAIN)')
+    print('starting the node (PROCESS MAIN)')
     node = Nodes.ClusterNode()
     node.boot('0.0.0.0', 9000)
-    print ('started node...')
+    print('started node...')
     
 def send_messages():
     print ('sending messages (PROCESS 2)')
@@ -32,15 +32,14 @@ def send_messages():
     intercom.post_string_message('0.0.0.0', 9000, Message.StringMessage('hello, world3!'))
     
     time.sleep(1)   
-    print ('end of test')
+    print('end of test')
     exit()
 
 if __name__ == '__main__':
-    print ('basic message test')
+    print('basic message test')
     
     taskManager = TaskManager()
     taskManager.tasks.append(
                 taskManager.executor.submit(send_messages,))
     
     start_node()
-    

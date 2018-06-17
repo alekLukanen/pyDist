@@ -70,7 +70,7 @@ def send_tasks(tasks_needed):
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 1000
+    tasks_needed = 160
     
     #send_tasks(tasks_needed)
 
