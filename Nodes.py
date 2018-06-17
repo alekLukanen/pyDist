@@ -96,13 +96,10 @@ class ClusterNode(object):
 
         user = self.interfaces.find_user_by_user_id(params['user_id'])
         if user!=None:
-            self.logger.debug('XXX Before wait')
             await self.interfaces.wait_for_first_finished_work_item_for_user(user)
-            self.logger.debug('XXX After wait')
             work_item = self.interfaces.find_finished_work_item_for_user(user)
             self.interfaces.reset_finished_event_for_user(user)
             if work_item!=None:
-                self.logger.debug('--* a take was found and sent to the user')
                 dictionary = {'data': work_item.pickle()}
                 return json.dumps(dictionary)
             else:

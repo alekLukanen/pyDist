@@ -9,109 +9,93 @@ import requests
 import json
 import pickleFunctions
 
-
-def get_request(location, params={}):
-    try:
-        response = requests.get(location, params=params)
-        return response
-    except:
-        return None
+import aiohttp
 
 
-def post_request(location, data, headers={"Content-Type":"application/json"}):
-    try:
-        response = requests.post(location,data=json.dumps(data)
-            ,headers=headers)
-        return response
-    except:
-        return None
+async def get_request(location, params={}):
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(location, params=params) as response:
+                return response
+        except aiohttp.client_exceptions.ClientConnectorError:
+            return None
 
 
-def connect_as_slave(server_ip, server_port, node):
-    return post_slave_node(server_ip, server_port, node)
+async def post_request(location, data, headers={"Content-Type":"application/json"}):
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(location, json=data, headers=headers) as response:
+                return response
+        except aiohttp.client_exceptions.ClientConnectorError:
+            return None
 
 
-def post_master_node(server_ip, server_port, node):
-    data = node.info()
-    location = location_assembler(server_ip, server_port, "/addMasterNode")
-    response = post_request(location, data)
-    return parse_response(response)
+async def get_json_request(location, params={}):
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(location, params=params) as response:
+                return await response.json()
+        except aiohttp.client_exceptions.ClientConnectorError:
+            return {}
 
 
-def post_slave_node(server_ip, server_port, node):
-    data = node.info()
-    location = location_assembler(server_ip, server_port, "/addSlaveNode")
-    response = post_request(location, data)
-    return parse_response(response)
-
-
-def close_server(server_ip, server_port):
-    location = location_assembler(server_ip, server_port, "/shutdown")
-    response = requests.get(location) 
-    return response
+async def post_json_request(location, data, headers={"Content-Type":"application/json"}):
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(location, json=data, headers=headers) as response:
+                return await response.json()
+        except aiohttp.client_exceptions.ClientConnectorError:
+            return {}
 
 
 ##############################
 ##############################
 ##############################
     
-def post_string_message(server_ip, server_port, message, params={}):
+async def post_string_message(server_ip, server_port, message, params={}):
     message_data = message.createDictionary()
     message_data.update(params)
     location = location_assembler(server_ip, server_port, "/addStringMessage")
-    response = post_request(location, message_data)
-    return parse_response(response)
+    response = await post_json_request(location, message_data)
+    return response
 
 
-def post_task(server_ip, server_port, task, params={}):
+async def post_task(server_ip, server_port, task, params={}):
     task_data = task.createDictionary()
     task_data.update(params)
     location = location_assembler(server_ip, server_port, "/addTask")
-    response = post_request(location, task_data)
-    return parse_response(response)
+    response = await post_json_request(location, task_data)
+    return response
 
 
-def get_counts(server_ip, server_port, params={}):
+async def get_counts(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/counts")
-    response = get_request(location)
-    return parse_response(response)
+    response = await get_json_request(location)
+    return response
 
 
-def get_node_info(server_ip, server_port, params={}):
+async def get_node_info(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/nodeInfo")
-    response = get_request(location)
-    return parse_response(response)
+    response = await get_json_request(location)
+    return response
 
 
-def get_finished_task_list(server_ip, server_port, params={}):
+async def get_finished_task_list(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/getFinishedTaskList")
-    response = get_request(location, params)
-    task_list = parse_response(response)
-    return pickleFunctions.unPickleListServer(task_list['data'])
+    response = await get_json_request(location, params)
+    return pickleFunctions.unPickleListServer(response['data'])
 
 
-def get_single_task(server_ip, server_port, params={}):
+async def get_single_task(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/getSingleTask")
-    response = get_request(location, params)
-    task = parse_response(response)
-    return pickleFunctions.unPickleServer(task['data'])
+    response = await get_json_request(location, params)
+    return pickleFunctions.unPickleServer(response['data'])
 
 
-def connect_user(server_ip, server_port, params={}):
+async def connect_user(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/connectUser")
-    response = post_request(location, params)
-    return parse_response(response)
-
-#def post_node_info_by_index(server_ip, server_port):
-
-
-def parse_response(response):
-    if (response!=None):
-        try:
-            return json.loads(response.text)
-        except:
-            return response.text
-    return None
+    response = await post_json_request(location, params)
+    return response
 
 
 def location_assembler(ip, port, endpoint):

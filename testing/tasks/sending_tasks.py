@@ -56,22 +56,21 @@ def send_tasks(tasks_needed):
         _ = cluster.submit(ex, i,2)
         
     logger.debug('sent %d tasks' % tasks_needed)
-    
+
     logger.debug('====Tasks====')
     task_count_conf = 0
     for task in cluster.as_completed():
         task_count_conf += 1
         logger.info('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, SUCCESS: %s\x1b[0m' % 
                 (tasks_needed, task_count_conf, (tasks_needed==task_count_conf)))
-        if (task_count_conf==tasks_needed):
-            break
 
+    cluster.disconnect()
     logger.debug('finished with sending and receiving tasks')
 
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    tasks_needed = 100
+    tasks_needed = 1000
     
     #send_tasks(tasks_needed)
 
@@ -82,8 +81,4 @@ if __name__ == '__main__':
     send_tasks(tasks_needed)
 
     logger.debug('Ened the test...')
-
-    #try:
-    #except Exception as e:
-        #logger.debug('node.taskManager.tasks: %s' % node.taskManager.tasks)
-        #logger.debug('node.taskManager.tasks[0].result().result(): %s' % node.taskManager.tasks[0].result().result())
+    exit()

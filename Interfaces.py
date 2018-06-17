@@ -16,8 +16,6 @@ import concurrent
 
 import intercom
 import Tasks
-from TaskManager import TaskManager
-from MultiKeyData import MultiKeyData
 
 
 class InterfaceHolder(object):
@@ -37,9 +35,9 @@ class InterfaceHolder(object):
         with self._condition:
             self.logger.debug('connecting user: %s' % user_data)
             user_interface = self.find_user_by_user_id(user_data['user_id'])
-            if (user_interface==None):
+            if user_interface == None:
                 user_interface = UserInterface(user_data['user_id'], user_data['group_id'])
-                self.user_interfaces.update({user_interface.user_id:user_interface})
+                self.user_interfaces.update({user_interface.user_id: user_interface})
                 return json.dumps({'connected': True})
             else:
                 return json.dumps({'connected': True})
@@ -148,6 +146,8 @@ class NodeInterface(object):
         self.tasks_sent = {}               #for user side only
         self.params = {}
 
+        self.event_loop = asyncio.get_event_loop()
+
         logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                             , stream=sys.stdout, level=logging.DEBUG)
         self.logger = logging.getLogger(__name__)
@@ -164,14 +164,14 @@ class NodeInterface(object):
                 , 'port': self.port}
 
     def update_counts(self):
-        response = intercom.get_counts(self.ip, self.port)
+        response = self.event_loop.run_until_complete(intercom.get_counts(self.ip, self.port))
         self.num_cores = response["num_cores"] if "num_cores" in response else 1
         self.num_running = response["num_tasks_running"] if "num_tasks_running" in response else 1
         self.num_queued = response["num_tasks_queued"] if "num_tasks_queued" in response else 1
         return response
 
     def update_info(self):
-        response = intercom.get_node_info(self.ip, self.port)
+        response = self.event_loop.run_until_complete(intercom.get_node_info(self.ip, self.port))
         self.node_id = uuid.UUID(str(response['node_id'])) if 'node_id' in response else None
         self.ip = response['ip'] if 'ip' in response else None
         self.port = response['port'] if 'port' in response else None
@@ -182,7 +182,8 @@ class NodeInterface(object):
     
     def add_task(self, task):
         self.logger.debug('C <--- U task: %s' % task)
-        response = intercom.post_task(self.ip, self.port, task, params=self.params)
+        response = self.event_loop.run_until_complete(intercom.post_task(self.ip, self.port
+                                                                         , task, params=self.params))
         if (response['task_added']==True):
             self.tasks_sent[task.task_id] = task
             return True
@@ -208,10 +209,12 @@ class ClusterExecutor(object):
         self.tasks_sent = {}
         self.futures = []
 
+        self.worker_loop = None
+        self.event_loop = asyncio.get_event_loop()
+
         #need to create thread here that waits for
         #finished task on the Node.
-        self.taskManager = TaskManager()
-        self.taskManager.executor = concurrent.futures.ThreadPoolExecutor(1)
+        self.worker_thread = None
 
         self._condition = threading.Condition()
 
@@ -220,18 +223,29 @@ class ClusterExecutor(object):
         self.logger = logging.getLogger(__name__)
         
     def connect(self, user_id, group_id='base'):
-        response = intercom.connect_user(self.ip, self.port
-                , params={'user_id': user_id, 'group_id': group_id})
-        if response['connected']:
+        response = self.event_loop.run_until_complete(intercom.connect_user(self.ip
+                , self.port, params={'user_id': user_id, 'group_id': group_id}))
+
+        if 'connected' in response and response['connected']:
             self.user_id = user_id
             self.group_id = group_id
             self._update_params()
-            self.taskManager.submit(
-                self.taskManager.executor.submit(self.finished_work_item_thread, )
-            )
+
+            self.worker_loop = asyncio.new_event_loop()
+            self.worker_thread = threading.Thread(target=self.event_loop_worker, args=(self.worker_loop,))
+            self.worker_thread.start()
             return True
         else:
             return False
+
+    def disconnect(self):
+        self.worker_loop.call_soon_threadsafe(self.stop_worker_loop)
+        self.worker_thread.join()
+        self.logger.debug('worker_thread: %s' % self.worker_thread)
+
+    def stop_worker_loop(self):
+        self.logger.debug('*----> called stop worker loop')
+        self.worker_loop.stop()
 
     def _update_params(self):
         self.params = {'user_id': self.user_id
@@ -262,8 +276,8 @@ class ClusterExecutor(object):
 
     def add_task(self, task):
         self.logger.debug('C <--- U task: %s' % task)
-        response = intercom.post_task(self.ip, self.port, task, params=self.params)
-        if response['task_added']:
+        response = self.event_loop.run_until_complete(intercom.post_task(self.ip, self.port, task, params=self.params))
+        if 'task_added' in response and response['task_added']:
             with self._condition:
                 self.tasks_sent[task.work_item.item_id] = task
                 self.futures.append(task.future)
@@ -273,24 +287,30 @@ class ClusterExecutor(object):
 
     def add_future(self, future):
         self.futures.append(future)
-        
-    def get_finished_task_list(self):
-        response = intercom.get_finished_task_list(self.ip, self.port
-                                        , params=self.params)
-        return response
-    
-    def get_single_work_item(self):
-        response = intercom.get_single_task(self.ip, self.port, params=self.params)
-        return response
 
-    def finished_work_item_thread(self):
+    async def finished_work_item_thread(self):
         self.logger.debug('*** Started the finished_task_thread')
         while True:
-            work_item = self.get_single_work_item()
+            try:
+                work_item = await intercom.get_single_task(self.ip, self.port, params=self.params)
+            except RuntimeError as e:
+                self.logger.error('Error in finished work item process')
             self.logger.debug('C ---> U task: %s' % work_item)
             if work_item.item_id in self.tasks_sent:
                 with self._condition:
                     self.tasks_sent[work_item.item_id].update(work_item)
+
+    def event_loop_worker(self, loop):
+        self.logger.debug('*** start of loop worker')
+        asyncio.set_event_loop(loop)
+        asyncio.ensure_future(self.finished_work_item_thread())
+        try:
+            loop.run_forever()
+        finally:
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.close()
+        self.logger.debug('*** end of loop worker')
+        exit()
         
     def __str__(self):
         return ('ip: %s, port: %s, user_id: %s, group_id: %s' 
