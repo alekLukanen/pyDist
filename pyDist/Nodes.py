@@ -18,11 +18,7 @@ import json
 import logging
 import sys
 
-import Interfaces
-import endpoints
-import Tasks
-import pickleFunctions    
-import TaskManager
+from pyDist import Interfaces, TaskManager, pickleFunctions, Tasks, endpoints
 
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
 logging.getLogger("asyncio").setLevel(logging.WARNING)

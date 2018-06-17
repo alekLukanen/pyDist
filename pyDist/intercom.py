@@ -5,9 +5,7 @@ Created on Sat Sep 23 18:37:52 2017
 
 @author: Aleksandr Lukanen
 """
-import requests 
-import json
-import pickleFunctions
+from pyDist import pickleFunctions
 
 import aiohttp
 

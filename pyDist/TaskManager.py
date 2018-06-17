@@ -8,7 +8,7 @@ Created on Mon Nov  6 16:37:22 2017
 
 import concurrent.futures
 import multiprocessing
-import Tasks
+from pyDist import Tasks
 
 import logging
 import sys

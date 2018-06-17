@@ -1,5 +1,5 @@
 import uuid
-import pickleFunctions
+from pyDist import pickleFunctions
 
 
 class ClusterItem(object):

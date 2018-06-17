@@ -5,7 +5,8 @@ Created on Fri Dec 15 22:20:15 2017
 
 @author: lukanen
 """
-import pickleFunctions
+from pyDist import pickleFunctions
+
 
 class BaseMessage(object):
     

@@ -7,18 +7,13 @@
 import sys
 sys.path.append('../../')
 
-import Nodes
 import time
-import intercom
-import Tasks
 import concurrent
 import logging
 import sys
-import os
 
-import Interfaces
-import intercom
-from TaskManager import TaskManager
+from pyDist import Interfaces, Nodes
+from pyDist.TaskManager import TaskManager
 
 #change these up for use in other cases
 taskManager = TaskManager()

@@ -14,8 +14,7 @@ import threading
 import asyncio
 import concurrent
 
-import intercom
-import Tasks
+from pyDist import intercom, Tasks
 
 
 class InterfaceHolder(object):
@@ -224,7 +223,7 @@ class ClusterExecutor(object):
         
     def connect(self, user_id, group_id='base'):
         response = self.event_loop.run_until_complete(intercom.connect_user(self.ip
-                , self.port, params={'user_id': user_id, 'group_id': group_id}))
+                                                                            , self.port, params={'user_id': user_id, 'group_id': group_id}))
 
         if 'connected' in response and response['connected']:
             self.user_id = user_id

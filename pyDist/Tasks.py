@@ -6,10 +6,9 @@ Created on Wed Nov  1 21:16:01 2017
 @author: lukanen
 """
 
-import pickleFunctions
+from pyDist import pickleFunctions, Items
 import concurrent.futures
 
-import Items
 
 def caller_helper(work_item):
     #unpickle the users function here

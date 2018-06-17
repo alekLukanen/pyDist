@@ -8,15 +8,11 @@ Created on Fri Dec 22 22:03:23 2017
 import sys
 sys.path.append('../../')
 
-import Nodes
-import time
-import intercom
-import Tasks
-import concurrent
+from pyDist import Nodes
 import logging
 import sys
 
-from TaskManager import TaskManager
+from pyDist.TaskManager import TaskManager
 
 #change these up for use in other cases
 taskManager = TaskManager()

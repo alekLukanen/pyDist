@@ -8,13 +8,10 @@ Created on Fri Dec 15 22:31:33 2017
 import sys
 sys.path.append('../../')
 
-import Nodes
 import time
-import intercom
-import Message
-import asyncio
+from pyDist import intercom, Message, Nodes
 
-from TaskManager import TaskManager
+from pyDist.TaskManager import TaskManager
 
 def start_node():
     print('starting the node (PROCESS MAIN)')

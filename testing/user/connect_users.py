@@ -9,14 +9,13 @@ Created on Sat Dec 23 19:30:06 2017
 import sys
 sys.path.append('../../')
 
-import Nodes
-import Interfaces
+from pyDist import Interfaces, Nodes
 import time
 import concurrent
 import logging
 import sys
 
-from TaskManager import TaskManager
+from pyDist.TaskManager import TaskManager
 
 #change these up for use in other cases
 taskManager = TaskManager()

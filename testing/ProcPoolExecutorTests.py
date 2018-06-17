@@ -9,9 +9,8 @@ import sys
 sys.path.append('../')
 
 import time
-import concurrent.futures
 
-from TaskManager import TaskManager
+from pyDist.TaskManager import TaskManager
 
 def waitFunc(a,t):
     time.sleep(a)
