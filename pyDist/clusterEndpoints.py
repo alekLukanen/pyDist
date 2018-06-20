@@ -7,6 +7,7 @@ Created on Fri Nov  3 16:43:16 2017
 """
 
 from aiohttp import web
+import aiohttp_jinja2
 import json
 import logging
 import sys
@@ -21,13 +22,13 @@ async def index(request):
     logger.debug('/')
     return web.Response(text='Hello Aiohttp!')
 
-async def addTask(request):
+async def add_task(request):
     logger.debug('/addTask')
     request_data = json.loads(await request.text())
     data = node.add_existing_task(request_data)
     return web.Response(body=data, headers={"Content-Type":"application/json"})
 
-async def addStringMessage(request):
+async def add_string_message(request):
     logger.debug('/addStringMessage')
     message_data = json.loads( await request.text() )
     node.add_string_message(message_data)
@@ -38,25 +39,26 @@ async def counts(request):
     data = node.get_counts()
     return web.Response(body=data, headers={"Content-Type":"application/json"})
 
-async def nodeInfo(request):
+async def node_info(request):
     logger.debug('/nodeInfo')
     data = node.get_info()
     return web.Response(body=data, headers={"Content-Type":"application/json"})
 
-async def getFinishedTaskList(request):
+async def get_finished_task_list(request):
     logger.debug('/getFinishedTaskList')
     params = request.rel_url.query
     tasks_finished = node.get_tasks_finished(params)
     return web.Response(body=tasks_finished, headers={"Content-Type":"application/json"})
 
-async def connectUser(request):
+async def connect_user(request):
     logger.debug('/connectUser')
     connection_data = json.loads(await request.text())
     response_data = node.interfaces.connect_user(connection_data)
     return web.Response(body=response_data, headers={"Content-Type":"application/json"})
 
-async def getSingleTask(request):
+async def get_single_task(request):
     logger.debug('/getSingleTask')
     params = request.rel_url.query
     task = await node.get_a_finished_work_item(params)
     return web.Response(body=task, headers={"Content-Type":"application/json"})
+

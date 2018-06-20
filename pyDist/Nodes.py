@@ -14,11 +14,14 @@ if lp.is_closed()==True or lp.is_running()==True:
     asyncio.set_event_loop(lp_temp)
 
 from aiohttp import web
+import aiohttp_jinja2
+import jinja2
 import json
 import logging
 import sys
 
-from pyDist import Interfaces, TaskManager, pickleFunctions, Tasks, endpoints
+from pyDist import Interfaces, TaskManager,\
+    pickleFunctions, Tasks, endpointSetup
 
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
 logging.getLogger("asyncio").setLevel(logging.WARNING)
@@ -47,14 +50,8 @@ class ClusterNode(object):
         print('server_loop: ', self.server_loop)
         
         self.app = web.Application()
-        self.app.router.add_route('GET', '/', endpoints.index)
-        self.app.router.add_route('GET', '/counts', endpoints.counts)
-        self.app.router.add_route('GET', '/nodeInfo', endpoints.nodeInfo)
-        self.app.router.add_route('GET', '/getFinishedTaskList', endpoints.getFinishedTaskList)
-        self.app.router.add_route('GET', '/getSingleTask', endpoints.getSingleTask)
-        self.app.router.add_route('POST', '/addTask', endpoints.addTask)
-        self.app.router.add_route('POST', '/addStringMessage', endpoints.addStringMessage)
-        self.app.router.add_route('POST', '/connectUser', endpoints.connectUser)
+        endpointSetup.setupClusterEndpoints(self.app)
+        endpointSetup.setupWebEndpoints(self.app)
         
         print('server_loop: ', self.server_loop)
         
@@ -92,9 +89,7 @@ class ClusterNode(object):
 
         user = self.interfaces.find_user_by_user_id(params['user_id'])
         if user!=None:
-            self.logger.debug(f'*** waiting for finished task: user: {user}')
             await self.server_loop.run_in_executor(None, self.interfaces.wait_for_first_finished_work_item_for_user, user)
-            self.logger.debug('*** found finished task')
             work_item = self.interfaces.find_finished_work_item_for_user(user)
             self.interfaces.reset_finished_event_for_user(user)
             if work_item!=None:
@@ -109,7 +104,9 @@ class ClusterNode(object):
     ###################################
 
     def boot(self, ip, port):
-        endpoints.node = self #give the endpoints a reference to this object
+        endpointSetup.clusterEndpoints.node = self
+        endpointSetup.webEndpoints.node = self
+
         self.interface.ip = ip
         self.interface.port = port
         print('app: ', self.app)
