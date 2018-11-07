@@ -229,9 +229,5 @@ class ClusterNode(object):
     #####################################
     
         
-if __name__=='__main__':
-    print ('starting a ClusterExecutorNode...')
-    node = ClusterNode()
-    node.boot('0.0.0.0', 9000)
     
     
