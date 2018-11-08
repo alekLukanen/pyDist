@@ -35,8 +35,7 @@ deactivate
 ```
 when the environment is no longer needed. 
 
-## Adding a Python3 Virtual Environment
-Link to docs: 
+Link to docs on Python virtual environments: 
 <https://packaging.python.org/guides/installing-using-pip-and-virtualenv/>.
 
 
