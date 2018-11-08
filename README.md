@@ -7,5 +7,8 @@ This code was developed to make parallel python code easier
  a much simpler interface will be used and objects will be
  passed as messages.
 
-## Future Work
+## Adding a Python3 Virtual Environment
+Link to docs: 
+<https://packaging.python.org/guides/installing-using-pip-and-virtualenv/>.
+
 

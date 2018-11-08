@@ -1,0 +1,15 @@
+aiohttp==3.4.4
+aiohttp-jinja2==1.1.0
+async-timeout==3.0.1
+attrs==18.2.0
+chardet==3.0.4
+cloudpickle==0.6.1
+idna==2.7
+idna-ssl==1.1.0
+Jinja2==2.10
+llvmlite==0.25.0
+MarkupSafe==1.1.0
+multidict==4.4.2
+numba==0.40.1
+numpy==1.15.4
+yarl==1.2.6
