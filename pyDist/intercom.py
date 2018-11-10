@@ -101,6 +101,13 @@ async def connect_user(server_ip, server_port, params={}):
     return response
 
 
+async def connect_node(node_ip, node_port, params={}):
+    print('connect_node using intercom')
+    location = location_assembler(node_ip, node_port, "/connectNode")
+    response = await post_json_request(location, params)
+    return response
+
+
 def location_assembler(ip, port, endpoint):
     address = "http://%s:%d" % (ip, port)
     location = "%s%s" % (address, endpoint)

@@ -28,11 +28,29 @@ class InterfaceHolder(object):
         self.logger = logging.getLogger(__name__)
 
         self.user_interfaces = {}
-        self.server_interfaces = []
+        self.node_interfaces = {}
         self.client_interfaces = []
         
         self._condition = threading.Condition()
-        
+
+    def connect_node(self, node_data):
+        with self._condition:
+            self.logger.debug('connecting node: %s' % node_data)
+            node_interface = self.find_node_by_node_id(node_data['node_id'])
+            if node_interface == None:
+                node_interface = NodeInterface()
+                node_interface.node_id = node_data['node_id']
+                node_interface.ip = node_data['ip']
+                node_interface.port = node_data['port']
+                self.node_interfaces.update({str(node_interface.node_id): node_interface})
+                self.logger.debug('node_interfaces (UPDATED): %s' % self.node_interfaces)
+                return json.dumps({'connected': True})
+            else:
+                return json.dumps({'connected': True})
+
+    def find_node_by_node_id(self, node_id):
+        return self.node_interfaces[node_id] if node_id in self.node_interfaces else None
+
     def connect_user(self, user_data):
         with self._condition:
             self.logger.debug('connecting user: %s' % user_data)
@@ -96,7 +114,7 @@ class InterfaceHolder(object):
     def __str__(self):
         return ('#users: %d, #servers: %d, #clients: %d' 
                 % (len(self.user_interfaces)
-                , len(self.server_interfaces)
+                , len(self.node_interfaces)
                 , len(self.client_interfaces)))
 
 class UserInterface(object):

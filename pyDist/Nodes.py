@@ -21,7 +21,7 @@ import logging
 import sys
 
 from pyDist import Interfaces, TaskManager,\
-    pickleFunctions, Tasks, endpointSetup
+    pickleFunctions, Tasks, endpointSetup, intercom
 
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
 logging.getLogger("asyncio").setLevel(logging.WARNING)
@@ -40,20 +40,16 @@ class ClusterNode(object):
         self.interface.num_queued = 0
         
         self.interfaces = Interfaces.InterfaceHolder()
-        
-        #self.io_loop = asyncio.new_event_loop()
+
+        self.io_loop = asyncio.new_event_loop()
         self.server_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.server_loop)
         
         self.work_item_added = True
-        
-        print('server_loop: ', self.server_loop)
-        
+
         self.app = web.Application()
         endpointSetup.setupClusterEndpoints(self.app)
         endpointSetup.setupWebEndpoints(self.app)
-        
-        print('server_loop: ', self.server_loop)
         
     ###USER INTERACTION CODE##############
     async def shutdown_executor(self):
@@ -103,18 +99,39 @@ class ClusterNode(object):
         
     ###################################
 
+    ##BOOT CODE########################
     def boot(self, ip, port):
         endpointSetup.clusterEndpoints.node = self
         endpointSetup.webEndpoints.node = self
 
         self.interface.ip = ip
         self.interface.port = port
-        print('app: ', self.app)
-        print('server_loop: ', self.server_loop)
         web.run_app(self.app, host=self.interface.ip, port=self.interface.port)
         
     def get_address(self):
         return "http://%s:%d" % (self.interface.ip, self.interface.port)
+
+    ###################################
+
+    ##NODE-TO-NODE COMMS###############
+    def connect_to_node(self, ip, port):
+        print ('connect_to_node...')
+        self.logger.debug('CONNECTING NODE TO (ip: %s, port: %s)' % (ip, port))
+        self.logger.debug('self.io_loop: %s' % self.io_loop)
+        try:
+            response = self.io_loop.run_until_complete(intercom.connect_node(ip,
+                            port, params={'node_id': str(self.interface.node_id),
+                            'ip': self.interface.ip,
+                            'port': self.interface.port}))
+        except Exception as e:
+            print('exception: ', e)
+
+        print ('response: ', response)
+        if 'connected' in response and response['connected']:
+            print ('connected!')
+
+    ###################################
+
     
     ###TASK CODE ######################
     def sign_work_item(self, work_item):
