@@ -14,7 +14,7 @@ def setupClusterEndpoints(app):
     app.router.add_route('GET', '/getFinishedTaskList', clusterEndpoints.get_finished_task_list)
     app.router.add_route('GET', '/getSingleTask', clusterEndpoints.get_single_task)
 
-    app.router.add_route('POST', '/addTask', clusterEndpoints.add_task)
+    app.router.add_route('POST', '/addWorkItem', clusterEndpoints.add_work_item)
     app.router.add_route('POST', '/addStringMessage', clusterEndpoints.add_string_message)
     app.router.add_route('POST', '/connectUser', clusterEndpoints.connect_user)
     app.router.add_route('POST', '/connectNode', clusterEndpoints.connect_node)

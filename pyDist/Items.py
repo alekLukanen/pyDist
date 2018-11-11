@@ -9,6 +9,12 @@ class ClusterItem(object):
         self.item_id = uuid.uuid4()
         self.interface_id = None
 
+    def add_trace(self, signature):
+        self.cluster_trace.append(signature)
+
+    def pop_tracer(self):
+        return self.cluster_trace.pop()
+
 
 class WorkerItem(ClusterItem):
 

@@ -51,6 +51,20 @@ class InterfaceHolder(object):
     def find_node_by_node_id(self, node_id):
         return self.node_interfaces[node_id] if node_id in self.node_interfaces else None
 
+    ##TODO:
+    # need to make the execution of the node stats such as
+    # core count async so this execution go faster. It will
+    # be a sequential query for now because that will be
+    # easier for testing.
+    def update_node_interface_data(self):
+        """
+        For each node in the list of node interfaces update
+        the data for that node (Ex: core count, available cores, etc).
+        :return: None
+        """
+        for node_interface in self.node_interfaces:
+            node_interface.update_counts()  # updates: num cores, num running, num queued
+
     def connect_user(self, user_data):
         with self._condition:
             self.logger.debug('connecting user: %s' % user_data)
@@ -202,8 +216,8 @@ class NodeInterface(object):
     
     def add_task(self, task):
         self.logger.debug('C <--- U task: %s' % task)
-        response = self.event_loop.run_until_complete(intercom.post_task(self.ip, self.port
-                                                                         , task, params=self.params))
+        response = self.event_loop.run_until_complete(intercom.post_work_item(self.ip, self.port
+                                                                              , task, params=self.params))
         if (response['task_added']==True):
             self.tasks_sent[task.task_id] = task
             return True
@@ -279,7 +293,7 @@ class ClusterExecutor(_base.Executor):
     def submit(self, fn, *args, **kwargs):
         task = Tasks.Task(fn, args, kwargs)
         with self._condition:
-            task_added = self.add_task(task)
+            task_added = self.add_work_item(task)
             if task_added:
                 self._work_item_sent.set()
         return task.future
@@ -303,9 +317,9 @@ class ClusterExecutor(_base.Executor):
     
     ##########################################
 
-    def add_task(self, task):
-        self.logger.debug('C <--- U task: %s' % task)
-        response = self.event_loop.run_until_complete(intercom.post_task(self.ip, self.port, task, params=self.params))
+    def add_work_item(self, task):
+        self.logger.debug('C <--- U work item: %s' % task)
+        response = self.event_loop.run_until_complete(intercom.post_work_item(self.ip, self.port, task, params=self.params))
         if 'task_added' in response and response['task_added']:
             with self._condition:
                 self.tasks_sent[task.work_item.item_id] = task

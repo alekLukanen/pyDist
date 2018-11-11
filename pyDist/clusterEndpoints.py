@@ -24,11 +24,11 @@ async def index(request):
     return web.Response(text='Hello Aiohttp!')
 
 
-async def add_task(request):
-    logger.debug('/addTask')
+async def add_work_item(request):
+    logger.debug('/addWorkItem')
     request_data = json.loads(await request.text())
     data = node.add_existing_task(request_data)
-    return web.Response(body=data, headers={"Content-Type":"application/json"})
+    return web.Response(body=data, headers={"Content-Type": "application/json"})
 
 
 async def add_string_message(request):

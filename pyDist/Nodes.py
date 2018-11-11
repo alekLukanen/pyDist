@@ -126,9 +126,9 @@ class ClusterNode(object):
         except Exception as e:
             print('exception: ', e)
 
-        print ('response: ', response)
+        print('response: ', response)
         if 'connected' in response and response['connected']:
-            print ('connected!')
+            print('connected!')
 
     ###################################
 
@@ -138,15 +138,15 @@ class ClusterNode(object):
         work_item.cluster_trace.append(self.interface.get_signature())
     
     def add_existing_work_item_async(self, task):
-        self.logger.debug('adding_existing_work_item_async()')
+        self.logger.debug('add_existing_work_item_async()')
         work_item = pickleFunctions.unPickleServer(task['data'])
         
-        #always pickle inner task data here
+        # always pickle inner task data here
         work_item.pickleInnerData()
         
-        #add the task to the users submitted tasks array
+        # add the task to the users submitted tasks array
         user = self.interfaces.find_user_by_user_id(task['user_id'])
-        if (user!=None):
+        if user!=None:
             work_item.interface_id = user.interface_id
             user.work_items_recieved.append(work_item)
         else:
@@ -169,7 +169,7 @@ class ClusterNode(object):
         if len(self.taskManager.tasks) < self.taskManager.num_cores:
             user, work_item = self.interfaces.find_user_work_item()
             if user == work_item == None:
-                self.logger.debug('No users have tasks to perfom')
+                self.logger.debug('No users have tasks to perform')
                 return False
             future = self.taskManager.executor.submit(Tasks.caller_helper, work_item)
             future.add_done_callback(self.work_item_finished_callback)
@@ -178,6 +178,9 @@ class ClusterNode(object):
             self.logger.debug('added work item to running list')
             return True
         else:
+            ##SEND TASK TO ANOTHER NODE######
+
+            #################################
             self.logger.debug('work item was not run because cores are available')
             return False
         
@@ -186,10 +189,10 @@ class ClusterNode(object):
         work_item = pickleFunctions.unPickleServer(data['data'])
         self.sign_work_item(work_item)
         
-        #always pickle inner task data here
+        # always pickle inner task data here
         work_item.pickleInnerData()
         
-        #add the task to the users submitted tasks array
+        # add the task to the users submitted tasks array
         user = self.interfaces.find_user_by_user_id(data['user_id'])
         if (user!=None):
             work_item.interface_id = user.interface_id
@@ -199,7 +202,7 @@ class ClusterNode(object):
             self.logger.warning('THE USER DOES NOT EXIST, TASK NOT ADDED')
             self.work_item_added = False
             return
-        #set add bool and find user task to run
+        # set add bool and find user task to run
         self.work_item_added = True
         self.run_task_from_user()
     
