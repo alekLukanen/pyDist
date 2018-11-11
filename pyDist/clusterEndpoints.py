@@ -33,7 +33,7 @@ async def add_work_item(request):
 
 async def add_string_message(request):
     logger.debug('/addStringMessage')
-    message_data = json.loads( await request.text() )
+    message_data = json.loads(await request.text())
     node.add_string_message(message_data)
     return web.Response(text='got the message')
 
@@ -41,34 +41,34 @@ async def add_string_message(request):
 async def counts(request):
     logger.debug('/counts')
     data = node.get_counts()
-    return web.Response(body=data, headers={"Content-Type":"application/json"})
+    return web.Response(body=data, headers={"Content-Type": "application/json"})
 
 
 async def node_info(request):
     logger.debug('/nodeInfo')
     data = node.get_info()
-    return web.Response(body=data, headers={"Content-Type":"application/json"})
+    return web.Response(body=data, headers={"Content-Type": "application/json"})
 
 
 async def get_finished_task_list(request):
     logger.debug('/getFinishedTaskList')
     params = request.rel_url.query
     tasks_finished = node.get_tasks_finished(params)
-    return web.Response(body=tasks_finished, headers={"Content-Type":"application/json"})
+    return web.Response(body=tasks_finished, headers={"Content-Type": "application/json"})
 
 
 async def connect_user(request):
     logger.debug('/connectUser')
     connection_data = json.loads(await request.text())
     response_data = node.interfaces.connect_user(connection_data)
-    return web.Response(body=response_data, headers={"Content-Type":"application/json"})
+    return web.Response(body=response_data, headers={"Content-Type": "application/json"})
 
 
 async def get_single_task(request):
     logger.debug('/getSingleTask')
     params = request.rel_url.query
     task = await node.get_a_finished_work_item(params)
-    return web.Response(body=task, headers={"Content-Type":"application/json"})
+    return web.Response(body=task, headers={"Content-Type": "application/json"})
 
 
 async def connect_node(request):
