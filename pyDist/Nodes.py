@@ -187,10 +187,14 @@ class ClusterNode(object):
     def add_work_item_to_user(self, data):
         self.logger.debug('adding_existing_task_async()')
         work_item = pickleFunctions.unPickleServer(data['data'])
-        self.sign_work_item(work_item)
+        self.sign_work_item(work_item) # add this nodes signature to the work item
         
         # always pickle inner task data here
         work_item.pickleInnerData()
+
+        if (work_item.in_cluster_network()):
+            self.logger.debug('work_item (added to pass-through list): $s' % work_item)
+
         
         # add the task to the users submitted tasks array
         user = self.interfaces.find_user_by_user_id(data['user_id'])

@@ -50,7 +50,7 @@ class StringMessage(BaseMessage):
             
     
 if __name__ == '__main__':
-    print ('Message testing...')
+    print ('Message tests...')
     
     print ('stack message')
     s_msg = StackMessage(data=[1,2,3])

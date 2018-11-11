@@ -6,14 +6,25 @@ class ClusterItem(object):
 
     def __init__(self):
         self.cluster_trace = []
+        self.stored_cluster_trace = []
         self.item_id = uuid.uuid4()
         self.interface_id = None
 
+    def trace(self):
+        return self.stored_cluster_trace
+
+    def in_cluster_network(self):
+        return len(self.cluster_trace) > 1
+
     def add_trace(self, signature):
         self.cluster_trace.append(signature)
+        self.stored_cluster_trace.append(signature)
 
     def pop_tracer(self):
-        return self.cluster_trace.pop()
+        if len(self.cluster_trace) > 0:
+            return self.cluster_trace.pop()
+        else:
+            return None
 
 
 class WorkerItem(ClusterItem):
@@ -76,7 +87,9 @@ class WorkerItem(ClusterItem):
         return pickle
 
     def __str__(self):
-        return f'item_id: {self.item_id}, id(user defined): {self.id}, ran: {self.ran}, result: {self.result}'
+        return f'item_id: {self.item_id}, id(user defined): {self.id}' \
+               f', hops: {len(self.cluster_trace)}' \
+               f', ran: {self.ran}, result: {self.result}'
 
 
 class VariableItem(ClusterItem):

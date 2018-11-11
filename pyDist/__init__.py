@@ -8,4 +8,3 @@ Created on Tue Nov  6 18:47:45 2018
 
 import pyDist.Interfaces as Interfaces
 import pyDist.Nodes as Nodes
-print ('abc')

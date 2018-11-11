@@ -55,7 +55,7 @@ class InterfaceHolder(object):
     # need to make the execution of the node stats such as
     # core count async so this execution go faster. It will
     # be a sequential query for now because that will be
-    # easier for testing.
+    # easier for tests.
     def update_node_interface_data(self):
         """
         For each node in the list of node interfaces update
