@@ -2,13 +2,14 @@
 
 import sys
 import time
-sys.path.append('../../')
-
 import concurrent.futures
+import asyncio
 
-
-from pyDist import Nodes
+from pyDist import Nodes, intercom
 from pyDist.TaskManager import TaskManager
+
+sys.path.append('.')  # add calling directory to the path
+
 
 def create_master_node(ip, port):
     node = Nodes.ClusterNode()
@@ -25,8 +26,9 @@ def create_slave_node(ip, port, connection_ip, connection_port):
 
     node.boot(ip, port)
 
-if __name__ == '__main__':
-    print('star structure test')
+
+def test_unary_star():
+    print('unary star structure test')
 
     taskManager = TaskManager()
     taskManager.num_cores = 2
@@ -41,3 +43,21 @@ if __name__ == '__main__':
     taskManager.tasks.append(
         taskManager.executor.submit(create_slave_node, '0.0.0.0', 9001, '0.0.0.0', 9000)
     )
+
+    io_loop = asyncio.get_event_loop()
+    counts_from_9000 = io_loop.run_until_complete(intercom.get_node_info('0.0.0.0', 9000))
+    counts_from_9001 = io_loop.run_until_complete(intercom.get_node_info('0.0.0.0', 9001))
+    print('counts_from_9000: ', counts_from_9000)
+    print('counts_from_9001: ', counts_from_9001)
+    assert True
+
+def test_binary_star():
+    print('binary star structure test')
+
+
+def test_trinary_star():
+    print('trinary star structure test')
+
+
+if __name__ == '__main__':
+    test_unary_star()
