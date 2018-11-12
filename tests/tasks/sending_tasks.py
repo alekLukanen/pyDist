@@ -5,7 +5,7 @@
 """
 
 import sys
-sys.path.append('../../')
+sys.path.append('.')
 
 import time
 import concurrent
@@ -49,7 +49,7 @@ def submit_test(tasks_needed):
     logger.debug('sending the task...')
     #send a message to the node
     for i in range(0,tasks_needed): #add three tasks
-        _ = cluster.submit(exSheet.estimatePi, 10_000)
+        _ = cluster.submit(exSheet.estimatePi, 1_000_000)
 
     task_count_conf = 0
     pi_est = 0.0
@@ -75,7 +75,7 @@ def map_test(tasks_needed, chuncksize=1):
     cluster.connect('map_test')
 
     logger.debug('mapping the tasks...')
-    results = cluster.map(exSheet.estimatePi, [10_000 for i in range(0, tasks_needed)], chunksize=chuncksize)
+    results = cluster.map(exSheet.estimatePi, [1_000_000 for i in range(0, tasks_needed)], chunksize=chuncksize)
 
     task_count_conf = 0
     pi_est = 0.0
@@ -98,7 +98,7 @@ def map_test(tasks_needed, chuncksize=1):
 if __name__ == '__main__':
     logger.debug('basic ClusterExecutor tests')
     
-    tasks_needed = 100
+    tasks_needed = 50
 
     start_submit_time = time.time()
     submit_test(tasks_needed)
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     submit_run_time = end_submit_time - start_submit_time
 
     start_map_time = time.time()
-    map_test(tasks_needed, chuncksize=50)
+    map_test(tasks_needed, chuncksize=int(tasks_needed/6)) # break into 6 chunks
     end_map_time = time.time()
     map_run_time = end_map_time - start_map_time
 

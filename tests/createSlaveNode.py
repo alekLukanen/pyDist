@@ -7,7 +7,7 @@ Created on Tue Nov  6 19:34:21 2018
 """
 
 import sys
-sys.path.append('../')
+sys.path.append('.')
 
 print ('starting a ClusterExecutorNode...')
 from pyDist import Nodes
