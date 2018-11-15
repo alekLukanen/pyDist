@@ -29,9 +29,21 @@ class InterfaceHolder(object):
 
         self.user_interfaces = {}
         self.node_interfaces = {}
-        self.client_interfaces = []
+        self.client_interfaces = []  # I think this is for the webpage stuff???
         
         self._condition = threading.Condition()
+
+    def get_interfaces_as_dict(self):
+        interface_dict = {'user_interfaces': [],
+                'node_interfaces': []}
+
+        for key in self.user_interfaces:
+            interface_dict['user_interfaces'].append(str(self.user_interfaces[key]))
+
+        for key2 in self.node_interfaces:
+            interface_dict['node_interfaces'].append(self.node_interfaces[key2].info())
+
+        return interface_dict
 
     def connect_node(self, node_data):
         with self._condition:

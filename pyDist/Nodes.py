@@ -26,6 +26,8 @@ from pyDist import Interfaces, TaskManager,\
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
 logging.getLogger("asyncio").setLevel(logging.WARNING)
 logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+
+
 class ClusterNode(object):
     
     def __init__(self):
@@ -251,7 +253,3 @@ class ClusterNode(object):
         self.logger.debug('RECIEVED MESSAGE: ', msg)
         
     #####################################
-    
-        
-    
-    

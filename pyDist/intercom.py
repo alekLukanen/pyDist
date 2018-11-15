@@ -54,7 +54,8 @@ async def post_json_request(location, data, headers={"Content-Type":"application
 ##############################
 ##############################
 ##############################
-    
+
+
 async def post_string_message(server_ip, server_port, message, params={}):
     message_data = message.createDictionary()
     message_data.update(params)
@@ -93,6 +94,12 @@ async def get_single_task(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/getSingleTask")
     response = await get_json_request(location, params)
     return pickleFunctions.unPickleServer(response['data'])
+
+
+async def get_interface_holder_interfaces(server_ip, server_port, params={}):
+    location = location_assembler(server_ip, server_port, "/getInterfaceHolderInterfaces")
+    response = await get_json_request(location, params)
+    return response['data']
 
 
 async def connect_user(server_ip, server_port, params={}):

@@ -72,9 +72,17 @@ async def get_single_task(request):
 
 
 async def connect_node(request):
-    logger.debug('/connect_node')
+    logger.debug('/connectNode')
     connection_data = json.loads(await request.text())
     response_data = node.interfaces.connect_node(connection_data)
     return web.Response(body=response_data, headers={"Content-Type": "application/json"})
+
+
+async def get_interface_holder_interfaces(request):
+    logger.debug('/getInterfaceHolderInterfaces')
+    params = request.rel_url.query
+    data_inner = node.interfaces.get_interfaces_as_dict()
+    data = json.dumps({'data': data_inner})
+    return web.Response(body=data, headers={"Content-Type": "application/json"})
 
 
