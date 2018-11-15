@@ -286,6 +286,7 @@ class ClusterExecutor(_base.Executor):
 
     def disconnect(self):
         self._closed.set()
+        self.worker_loop.stop()
         self.worker_loop.call_soon_threadsafe(self.stop_worker_loop)
         self.worker_thread.join()
         self.logger.debug('worker_thread: %s' % self.worker_thread)

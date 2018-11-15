@@ -21,5 +21,5 @@ remove_env:
 
 test:
 	@echo "\033[92m-* Running tests in the tests directory\033[0m"
-	@nosetests -v --nocapture tests/
+	@nosetests -v tests/
 
