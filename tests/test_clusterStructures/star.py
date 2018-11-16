@@ -40,7 +40,7 @@ def create_slave_node(ip, port, connection_ip, connection_port):
 
 def create_Nary_star(N, send_tasks=False):
     task_manager = TaskManager()
-    task_manager.num_cores = N+1
+    task_manager.num_cores = N+2
     task_manager.executor = concurrent.futures.ProcessPoolExecutor(task_manager.num_cores)
 
     task_manager.tasks.append(
@@ -66,13 +66,19 @@ def create_Nary_star(N, send_tasks=False):
     #print('----- interfaces_from_9001 -----')
     #pp.print_list('* ', interfaces_from_9001['node_interfaces'])
 
-    if (send_tasks):
+    logger.debug(f'os.getpid(): {os.getpid()}')
+
+    if send_tasks:
         logger.debug('----- creating executor and sending tasks -----')
         cluster_ex = Interfaces.ClusterExecutor('0.0.0.0', 9000)
         cluster_ex.connect(f'create_Nary_star({N})', group_id='star_tests')
         send_test_tasks_to_node(cluster_ex)
+        cluster_ex.disconnect()
+
+    logger.debug(f'os.getpid(): {os.getpid()}')
 
     # shutdown the executor then kill all child processes
+    logger.debug('Shutting down the test processes')
     task_manager.executor.shutdown(wait=False)
     kill_child_processes(os.getpid())
 
@@ -81,7 +87,7 @@ def create_Nary_star(N, send_tasks=False):
 
 def test_unary_star():
     logger.debug('unary star structure test')
-    create_Nary_star(1)
+    #create_Nary_star(1)
     create_Nary_star(1, send_tasks=True)
 
 
@@ -103,7 +109,7 @@ def test_ridiculous_star():
 def send_test_tasks_to_node(cluster_ex):
     logger.debug('send_test_tasks_to_node()')
 
-    tasks_needed = 3
+    tasks_needed = 20
 
     logger.debug('sending the task...')
     # send a message to the node
@@ -122,10 +128,9 @@ def send_test_tasks_to_node(cluster_ex):
 
     logger.info(f'Estimate of pi: {pi_est/tasks_needed}')
 
-    cluster_ex.disconnect()
-    time.sleep(1)
     logger.debug('finished the submit test')
 
 
 if __name__ == '__main__':
     test_unary_star()
+    logger.debug(f'--- end of main file ---')

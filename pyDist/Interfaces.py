@@ -256,6 +256,8 @@ class ClusterExecutor(_base.Executor):
         self.tasks_pending = {}
         self.futures = []
 
+        self.tasks_received = 0
+
         self.worker_loop = None
         self.event_loop = asyncio.get_event_loop()
         self.worker_thread = None
@@ -286,10 +288,17 @@ class ClusterExecutor(_base.Executor):
 
     def disconnect(self):
         self._closed.set()
-        self.worker_loop.stop()
+        self._work_item_sent.set()
+
         self.worker_loop.call_soon_threadsafe(self.stop_worker_loop)
         self.worker_thread.join()
-        self.logger.debug('worker_thread: %s' % self.worker_thread)
+
+        self.worker_loop.stop()
+        self.worker_loop.close()
+
+        self.logger.debug(f'self.worker_thread: {self.worker_thread}')
+        self.logger.debug(f'self.worker_loop: {self.worker_loop}')
+        self.logger.debug(f'self.event_loop : {self.event_loop }')
 
     def stop_worker_loop(self):
         self.logger.debug('*----> called stop worker loop')
@@ -332,7 +341,10 @@ class ClusterExecutor(_base.Executor):
 
     def add_work_item(self, task):
         self.logger.debug('C <--- U work item: %s' % task)
-        response = self.event_loop.run_until_complete(intercom.post_work_item(self.ip, self.port, task, params=self.params))
+        response = self.event_loop.run_until_complete(intercom.post_work_item(self.ip,
+                                                                              self.port,
+                                                                              task,
+                                                                              params=self.params))
         if 'task_added' in response and response['task_added']:
             with self._condition:
                 self.tasks_sent[task.work_item.item_id] = task
@@ -340,6 +352,7 @@ class ClusterExecutor(_base.Executor):
             return True
         else:
             with self._condition:
+                self.logger.debug('task added to pending tasks')
                 self.tasks_pending[task.work_item.item_id] = task
                 self.add_future(task.future)
             return False
@@ -352,6 +365,14 @@ class ClusterExecutor(_base.Executor):
         while True:
             try:
                 self._work_item_sent.wait()
+                with self._condition:
+                    self.logger.debug(f'*** self.tasks_received={self.tasks_received} ***')
+                    if self.tasks_received == len(self.tasks_sent):
+                        if self._closed.is_set():
+                            break
+                        self._work_item_sent.clear()
+                self._work_item_sent.wait()
+
                 if self._closed.is_set():
                     break
                 work_item = await intercom.get_single_task(self.ip, self.port, params=self.params)
@@ -363,6 +384,7 @@ class ClusterExecutor(_base.Executor):
             if work_item.item_id in self.tasks_sent:
                 with self._condition:
                     self.tasks_sent[work_item.item_id].update(work_item)
+                    self.tasks_received += 1
         self.logger.debug('*** Ended the finished_task_thread')
 
     def event_loop_worker(self, loop):
@@ -375,6 +397,7 @@ class ClusterExecutor(_base.Executor):
         except RuntimeError as e:
             self.logger.error('*** stopped updating work items (should be here)')
         finally:
+            self.logger.debug('*** finally shutting down async gens ***')
             loop.run_until_complete(loop.shutdown_asyncgens())
             loop.close()
         self.logger.debug('*** end of loop worker')
