@@ -21,7 +21,7 @@ import logging
 import sys
 
 from pyDist import Interfaces, TaskManager,\
-    pickleFunctions, Tasks, endpointSetup, intercom
+    pickleFunctions, Tasks, endpointSetup, intercom, WorkItemOptimizer
 
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
 logging.getLogger("asyncio").setLevel(logging.WARNING)
@@ -40,13 +40,14 @@ class ClusterNode(object):
         self.interface.num_cores = self.taskManager.num_cores
         self.interface.num_running = 0
         self.interface.num_queued = 0
-        
-        self.interfaces = Interfaces.InterfaceHolder()
 
         self.io_loop = asyncio.new_event_loop()
         self.server_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.server_loop)
-        
+
+        self.interfaces = Interfaces.InterfaceHolder(self.io_loop)
+        self.task_optimizer = WorkItemOptimizer.WorkItemOptimizer(self.interfaces)
+
         self.work_item_added = True
 
         self.app = web.Application()
@@ -167,12 +168,12 @@ class ClusterNode(object):
         self.work_item_added = True
         return
     
-    def run_task_from_user(self):
+    async def run_task_from_user(self):
+        user, work_item = self.interfaces.find_user_work_item()
+        if user == work_item == None:
+            self.logger.debug('No users have tasks to perform')
+            return False
         if len(self.taskManager.tasks) < self.taskManager.num_cores:
-            user, work_item = self.interfaces.find_user_work_item()
-            if user == work_item == None:
-                self.logger.debug('No users have tasks to perform')
-                return False
             future = self.taskManager.executor.submit(Tasks.caller_helper, work_item)
             future.add_done_callback(self.work_item_finished_callback)
             self.taskManager.submit(future)
@@ -180,13 +181,17 @@ class ClusterNode(object):
             self.logger.debug('added work item to running list')
             return True
         else:
+            self.logger.debug('attempting to send a task to another node')
             ##SEND TASK TO ANOTHER NODE######
-
+            distributed_a_work_item = await self.task_optimizer.send_work_item_to_node(work_item)
             #################################
-            self.logger.debug('work item was not run because cores are available')
-            return False
+            if distributed_a_work_item:
+                self.logger.debug('work item was sent to another node')
+            else:
+                self.logger.debug('work item was not sent to another node')
+            return distributed_a_work_item
         
-    def add_work_item_to_user(self, data):
+    async def add_work_item_to_user(self, data):
         self.logger.debug('adding_existing_task_async()')
         work_item = pickleFunctions.unPickleServer(data['data'])
         self.sign_work_item(work_item)  # add this nodes signature to the work item
@@ -195,26 +200,36 @@ class ClusterNode(object):
         work_item.pickleInnerData()
 
         if work_item.in_cluster_network():
-            self.logger.debug('work_item (added to pass-through list): $s' % work_item)
+            self.logger.debug(f'work_item (added to pass-through list): {work_item}')
         
         # add the task to the users submitted tasks array
-        user = self.interfaces.find_user_by_user_id(data['user_id'])
-        if user!=None:
-            work_item.interface_id = user.interface_id
-            user.work_items_received.append(work_item)
-            self.logger.debug('work_item (added to user receive list): %s' % work_item)
+        if 'is_node' in data and data['is_node']:
+            self.logger.debug('this task is from a node')
+            ## NEED TO RUN A NODE TASK HERE#####
+            # TODO:
+            #   a new method run_task_from_node
+            # should be called here.
+
+            ####################################
         else:
-            self.logger.warning('THE USER DOES NOT EXIST, TASK NOT ADDED')
-            self.work_item_added = False
-            return
-        # set add bool and find user task to run
-        self.work_item_added = True
-        self.run_task_from_user()
+            user = self.interfaces.find_user_by_user_id(data['user_id'])
+            if user!=None:
+                work_item.interface_id = user.interface_id
+                user.work_items_received.append(work_item)
+                self.logger.debug('work_item (added to user receive list): %s' % work_item)
+            else:
+                self.logger.warning('THE USER DOES NOT EXIST, TASK NOT ADDED')
+                self.work_item_added = False
+                return
+            # set add bool and find user task to run
+            self.work_item_added = True
+            await self.run_task_from_user()
     
-    def add_existing_task(self, task):
+    async def add_existing_task(self, task):
         self.logger.debug('add_existing_task()')
         #self.server_loop.call_soon_threadsafe(self.add_existing_task_async, task)
-        self.server_loop.call_soon_threadsafe(self.add_work_item_to_user, task)
+        #self.server_loop.call_soon_threadsafe(self.add_work_item_to_user, task)
+        await self.add_work_item_to_user(task)
         return json.dumps({'task_added': self.work_item_added})
     
     def work_item_finished_callback(self, future):

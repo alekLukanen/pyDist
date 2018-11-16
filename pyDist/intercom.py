@@ -64,8 +64,8 @@ async def post_string_message(server_ip, server_port, message, params={}):
     return response
 
 
-async def post_work_item(server_ip, server_port, task, params={}):
-    task_data = task.createDictionary()
+async def post_work_item(server_ip, server_port, work_item, params={}):
+    task_data = work_item.createDictionary()
     task_data.update(params)
     location = location_assembler(server_ip, server_port, "/addWorkItem")
     response = await post_json_request(location, task_data)

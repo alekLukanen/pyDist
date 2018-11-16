@@ -22,7 +22,7 @@ from pyDist import intercom, Tasks
 
 class InterfaceHolder(object):
     
-    def __init__(self):
+    def __init__(self, event_loop):
         logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
         self.logger = logging.getLogger(__name__)
@@ -30,6 +30,8 @@ class InterfaceHolder(object):
         self.user_interfaces = {}
         self.node_interfaces = {}
         self.client_interfaces = []  # I think this is for the webpage stuff???
+
+        self.event_loop = event_loop
         
         self._condition = threading.Condition()
 
@@ -45,12 +47,12 @@ class InterfaceHolder(object):
 
         return interface_dict
 
-    def connect_node(self, node_data):
+    async def connect_node(self, node_data):
         with self._condition:
             self.logger.debug('connecting node: %s' % node_data)
             node_interface = self.find_node_by_node_id(node_data['node_id'])
             if node_interface == None:
-                node_interface = NodeInterface()
+                node_interface = NodeInterface(event_loop=self.event_loop)
                 node_interface.node_id = node_data['node_id']
                 node_interface.ip = node_data['ip']
                 node_interface.port = node_data['port']
@@ -68,14 +70,14 @@ class InterfaceHolder(object):
     # core count async so this execution go faster. It will
     # be a sequential query for now because that will be
     # easier for tests.
-    def update_node_interface_data(self):
+    async def update_node_interface_data(self):
         """
         For each node in the list of node interfaces update
         the data for that node (Ex: core count, available cores, etc).
         :return: None
         """
         for node_interface in self.node_interfaces:
-            node_interface.update_counts()  # updates: num cores, num running, num queued
+            await self.node_interfaces[node_interface].update_counts()  # updates: num cores, num running, num queued
 
     def connect_user(self, user_data):
         with self._condition:
@@ -182,7 +184,7 @@ class UserInterface(object):
 
 class NodeInterface(object):
     
-    def __init__(self):
+    def __init__(self, event_loop=asyncio.new_event_loop()):
         self.node_id = uuid.uuid4()
         self.ip = None
         self.port = None
@@ -190,9 +192,9 @@ class NodeInterface(object):
         self.num_running = None            #for user side only
         self.num_queued = None             #for user side only
         self.tasks_sent = {}               #for user side only
-        self.params = {}
+        self.params = {'is_node': True}
 
-        self.event_loop = asyncio.get_event_loop()
+        self.event_loop = event_loop
 
         logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                             , stream=sys.stdout, level=logging.DEBUG)
@@ -209,8 +211,10 @@ class NodeInterface(object):
         return {'node_id': self.node_id, 'ip': self.ip
                 , 'port': self.port}
 
-    def update_counts(self):
-        response = self.event_loop.run_until_complete(intercom.get_counts(self.ip, self.port))
+    async def update_counts(self):
+        #self.logger.debug(f'self.event_loop: {self.event_loop}')
+        #response = self.event_loop.run_until_complete(intercom.get_counts(self.ip, self.port))
+        response = await intercom.get_counts(self.ip, self.port)
         self.num_cores = response["num_cores"] if "num_cores" in response else 1
         self.num_running = response["num_tasks_running"] if "num_tasks_running" in response else 1
         self.num_queued = response["num_tasks_queued"] if "num_tasks_queued" in response else 1
@@ -226,12 +230,15 @@ class NodeInterface(object):
         self.num_queued = response['num_queued'] if 'num_queued' in response else None
         return response
     
-    def add_task(self, task):
-        self.logger.debug('C <--- U task: %s' % task)
-        response = self.event_loop.run_until_complete(intercom.post_work_item(self.ip, self.port
-                                                                              , task, params=self.params))
-        if (response['task_added']==True):
-            self.tasks_sent[task.task_id] = task
+    async def add_work_item(self, work_item):
+        self.logger.debug(f'N <---> N work_item: {work_item}')
+        self.event_loop = asyncio.new_event_loop()
+        self.logger.debug(f'self.event_loop: {self.event_loop}')
+        # response = self.event_loop.run_until_complete(intercom.post_work_item(self.ip, self.port
+        #                                                                      , work_item, params=self.params))
+        response = await intercom.post_work_item(self.ip, self.port, work_item, params=self.params)
+        if response['task_added']==True:
+            self.tasks_sent[work_item.task_id] = work_item
             return True
         else:
             return False
@@ -343,7 +350,7 @@ class ClusterExecutor(_base.Executor):
         self.logger.debug('C <--- U work item: %s' % task)
         response = self.event_loop.run_until_complete(intercom.post_work_item(self.ip,
                                                                               self.port,
-                                                                              task,
+                                                                              task.work_item,
                                                                               params=self.params))
         if 'task_added' in response and response['task_added']:
             with self._condition:

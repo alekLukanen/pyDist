@@ -86,6 +86,9 @@ class WorkerItem(ClusterItem):
         pickle = pickleFunctions.createPickleServer(self)
         return pickle
 
+    def createDictionary(self):
+        return {'data': self.pickle()}
+
     def __str__(self):
         return f'item_id: {self.item_id}, id(user defined): {self.id}' \
                f', hops: {len(self.cluster_trace)}' \

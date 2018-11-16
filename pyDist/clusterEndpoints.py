@@ -27,7 +27,7 @@ async def index(request):
 async def add_work_item(request):
     logger.debug('/addWorkItem')
     request_data = json.loads(await request.text())
-    data = node.add_existing_task(request_data)
+    data = await node.add_existing_task(request_data)
     return web.Response(body=data, headers={"Content-Type": "application/json"})
 
 
@@ -74,7 +74,7 @@ async def get_single_task(request):
 async def connect_node(request):
     logger.debug('/connectNode')
     connection_data = json.loads(await request.text())
-    response_data = node.interfaces.connect_node(connection_data)
+    response_data = await node.interfaces.connect_node(connection_data)
     return web.Response(body=response_data, headers={"Content-Type": "application/json"})
 
 
