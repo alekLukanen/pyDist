@@ -87,7 +87,7 @@ class WorkerItem(ClusterItem):
         return pickle
 
     def __str__(self):
-        return f'item_id: {self.item_id}, id(user defined): {self.id}' \
+        return f'item_id: {self.item_id}, id(test_nodeEndpoints defined): {self.id}' \
                f', hops: {len(self.cluster_trace)}' \
                f', ran: {self.ran}, result: {self.result}'
 

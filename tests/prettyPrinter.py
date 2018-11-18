@@ -1,5 +1,4 @@
 
-
 def print_list(leading_str, listy, empty_message='No elements in list'):
 
     if len(listy)==0:

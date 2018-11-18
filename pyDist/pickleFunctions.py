@@ -26,7 +26,7 @@ def pickleObjTemp(job,data):
 def unpickleObjTemp(outfile):
     return cloudpickle.load(outfile)
 
-#functions used to pickle a user pickle
+#functions used to pickle a test_nodeEndpoints pickle
 def createPickle(obj):
     return cloudpickle.dumps(obj)
     

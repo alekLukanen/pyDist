@@ -79,7 +79,7 @@ class InterfaceHolder(object):
 
     def connect_user(self, user_data):
         with self._condition:
-            self.logger.debug('connecting user: %s' % user_data)
+            self.logger.debug('connecting test_nodeEndpoints: %s' % user_data)
             user_interface = self.find_user_by_user_id(user_data['user_id'])
             if user_interface == None:
                 user_interface = UserInterface(user_data['user_id'], user_data['group_id'])
@@ -106,7 +106,7 @@ class InterfaceHolder(object):
                 if user.interface_id == work_item.interface_id:
                     user.work_items_running.remove(work_item.item_id)
                     user.finished_work_item(work_item)
-                    self.logger.debug(f'job finished event: {user.finished_event}')
+                    self.logger.debug(f'job finished event: {test_nodeEndpoints.finished_event}')
                     self.remove_work_item_in_user_by_item_id(user, work_item.item_id)
                     return True
             return False
@@ -187,9 +187,9 @@ class NodeInterface(object):
         self.ip = None
         self.port = None
         self.num_cores = None
-        self.num_running = None            #for user side only
-        self.num_queued = None             #for user side only
-        self.tasks_sent = {}               #for user side only
+        self.num_running = None            #for test_nodeEndpoints side only
+        self.num_queued = None             #for test_nodeEndpoints side only
+        self.tasks_sent = {}               #for test_nodeEndpoints side only
         self.params = {}
 
         self.event_loop = asyncio.get_event_loop()

@@ -31,7 +31,7 @@ class Task(object):
     
     def __init__(self, fn, args, kwargs):
         self.work_item = Items.WorkerItem(fn, args, kwargs) #cluster facing
-        self.future = concurrent.futures._base.Future() #user facing
+        self.future = concurrent.futures._base.Future() #test_nodeEndpoints facing
         
     def update(self, work_item):
         self.work_item = work_item

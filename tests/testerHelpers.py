@@ -8,6 +8,12 @@ Created on Sat Sep 23 17:41:51 2017
 
 import signal
 import psutil
+import pyDist.endpointSetup as endpointSetup
+
+
+def create_master_node(ip, port):
+    node = endpointSetup.setup_cluster_node()
+    node.boot('0.0.0.0', 9000)
 
 
 def kill_child_processes(parent_pid, sig=signal.SIGTERM):

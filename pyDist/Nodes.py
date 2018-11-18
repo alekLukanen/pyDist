@@ -29,9 +29,8 @@ logging.getLogger("asyncio").setLevel(logging.WARNING)
 logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
 
 
-class ClusterNodeV2(pyDist.comms.ClusterExecutor.Receive,
-                    pyDist.comms.ClusterExecutor.Send,
-                    pyDist.comms.ClusterExecutor.Status):
+class ClusterNodeV2(pyDist.comms.ClusterExecutor.Comm,
+                    pyDist.comms.WorkItems.Comm):
 
     def __init__(self):
         self.interface = Interfaces.NodeInterface()
@@ -40,7 +39,7 @@ class ClusterNodeV2(pyDist.comms.ClusterExecutor.Receive,
         asyncio.set_event_loop(self.server_loop)
         self.app = web.Application()
 
-        pyDist.comms.ClusterExecutor.Receive.__init__(self, self.interfaces)
+        pyDist.comms.ClusterExecutor.Receive.__init__(self)
         pyDist.comms.ClusterExecutor.Send.__init__(self)
 
     def boot(self, ip, port):
@@ -99,7 +98,7 @@ class ClusterNode(object):
             dictionary = {'data': pickleFunctions.pickleListServer(user.tasks_finished)}
             return json.dumps(dictionary)
         else:
-            return json.dumps({'data': [], 'error': 'no user for that user_id'})
+            return json.dumps({'data': [], 'error': 'no test_nodeEndpoints for that user_id'})
         
     async def get_a_finished_work_item(self, params):
         if 'user_id' not in params:
@@ -118,7 +117,7 @@ class ClusterNode(object):
                 self.logger.warning('the work item was of Nonetype')
                 return json.dumps({'data': None, 'error': 'work item was none'})
         else:
-            return json.dumps({'data': None, 'error': 'no user for that user_id'})
+            return json.dumps({'data': None, 'error': 'no test_nodeEndpoints for that user_id'})
         
     ###################################
 
@@ -223,12 +222,12 @@ class ClusterNode(object):
         if user!=None:
             work_item.interface_id = user.interface_id
             user.work_items_received.append(work_item)
-            self.logger.debug('work_item (added to user receive list): %s' % work_item)
+            self.logger.debug('work_item (added to test_nodeEndpoints receive list): %s' % work_item)
         else:
             self.logger.warning('THE USER DOES NOT EXIST, TASK NOT ADDED')
             self.work_item_added = False
             return
-        # set add bool and find user task to run
+        # set add bool and find test_nodeEndpoints task to run
         self.work_item_added = True
         self.run_task_from_user()
     
@@ -255,7 +254,7 @@ class ClusterNode(object):
         t_added   = self.run_task_from_user()
 
         #show warning messages when necessary
-        self.logger.debug('user.counts(): %s' 
+        self.logger.debug('test_nodeEndpoints.counts(): %s'
                 % self.interfaces.find_user_by_interface_id(work_item.interface_id).counts())
         if (t_updated==False):
             self.logger.warning('A TASK FAILED TO UPDATE')

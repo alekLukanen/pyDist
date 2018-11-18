@@ -59,7 +59,7 @@ class TaskManager(object):
     def add_finished_task(self, task):
         self.tasks_finished.append(task)
         
-    #update a task for viewing by the user 
+    #update a task for viewing by the test_nodeEndpoints
     def update_task_by_id(self, task):
         for task_sub in self.user_tasks:
             if (task_sub.task_id==task.task_id):
