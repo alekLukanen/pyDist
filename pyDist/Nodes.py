@@ -30,7 +30,8 @@ logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
 
 
 class ClusterNodeV2(pyDist.comms.ClusterExecutor.Receive,
-                    pyDist.comms.ClusterExecutor.Send):
+                    pyDist.comms.ClusterExecutor.Send,
+                    pyDist.comms.ClusterExecutor.Status):
 
     def __init__(self):
         self.interface = Interfaces.NodeInterface()
