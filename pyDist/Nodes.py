@@ -22,10 +22,30 @@ import sys
 
 from pyDist import Interfaces, TaskManager,\
     pickleFunctions, Tasks, endpointSetup, intercom
+import pyDist.comms.ClusterExecutor
 
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
 logging.getLogger("asyncio").setLevel(logging.WARNING)
 logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+
+
+class ClusterNodeV2(pyDist.comms.ClusterExecutor.Receive,
+                    pyDist.comms.ClusterExecutor.Send):
+
+    def __init__(self):
+        self.interface = Interfaces.NodeInterface()
+        self.interfaces = Interfaces.InterfaceHolder()
+        self.server_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.server_loop)
+        self.app = web.Application()
+
+        pyDist.comms.ClusterExecutor.Receive.__init__(self, self.interfaces)
+        pyDist.comms.ClusterExecutor.Send.__init__(self)
+
+    def boot(self, ip, port):
+        self.interface.ip = ip
+        self.interface.port = port
+        web.run_app(self.app, host=self.interface.ip, port=self.interface.port)
 
 
 class ClusterNode(object):

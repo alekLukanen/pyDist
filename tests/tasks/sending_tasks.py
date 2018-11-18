@@ -97,7 +97,7 @@ def map_test(tasks_needed, chuncksize=1):
 
 
 if __name__ == '__main__':
-    logger.debug('basic ClusterExecutor tests')
+    logger.debug('basic ClusterExecutor.py tests')
     
     tasks_needed = 50
 

@@ -106,7 +106,7 @@ class InterfaceHolder(object):
                 if user.interface_id == work_item.interface_id:
                     user.work_items_running.remove(work_item.item_id)
                     user.finished_work_item(work_item)
-                    self.logger.debug(f'job finished event: {user._finished_event}')
+                    self.logger.debug(f'job finished event: {user.finished_event}')
                     self.remove_work_item_in_user_by_item_id(user, work_item.item_id)
                     return True
             return False
