@@ -143,6 +143,7 @@ class InterfaceHolder(object):
                 , len(self.node_interfaces)
                 , len(self.client_interfaces)))
 
+
 class UserInterface(object):
     
     def __init__(self, user_id, group_id):
@@ -156,6 +157,19 @@ class UserInterface(object):
         
         self._condition = threading.Condition()
         self._finished_event = threading.Event()
+
+    def add_received_work_item(self, work_item):
+        with self._condition:
+            self.work_items_received.append(work_item)
+
+    def add_running_work_item(self, work_item):
+        with self._condition:
+            self.work_items_running.append(work_item)
+
+    def add_finished_work_item(self, work_item):
+        with self._condition:
+            self.work_items_finished.append(work_item)
+            self._finished_event.set()
         
     def finished_work_item(self, work_item):
         with self._condition:
