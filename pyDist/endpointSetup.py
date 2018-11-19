@@ -10,9 +10,12 @@ from pyDist import clusterEndpoints, webEndpoints, Nodes
 def setup_cluster_node():
     node = Nodes.ClusterNodeV2()
     node.app.router.add_route('POST', '/connectUser', node.ce_connect_user)
+    node.app.router.add_route('POST', '/addWorkItem', node.wi_add_work_item)
+
     node.app.router.add_route('GET', '/', node.ce_index)
     node.app.router.add_route('GET', '/listOfUsers', node.ce_list_of_users)
     node.app.router.add_route('GET', '/interfaceStats', node.ce_stats)
+    node.app.router.add_route('GET', '/userCounts', node.wi_get_user_counts)
 
     return node
 

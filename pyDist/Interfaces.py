@@ -160,6 +160,7 @@ class UserInterface(object):
 
     def add_received_work_item(self, work_item):
         with self._condition:
+            work_item.interface_id = self.interface_id
             self.work_items_received.append(work_item)
 
     def add_running_work_item(self, work_item):
@@ -188,6 +189,11 @@ class UserInterface(object):
                 % (len(self.work_items_received)
                 , len(self.work_items_running)
                 , len(self.work_items_finished)))
+
+    def counts_dict(self):
+        return {'received': len(self.work_items_received),
+                'running': len(self.work_items_running),
+                'finished': len(self.work_items_finished)}
         
     def __str__(self): 
         return ('user_id: %s, group_id: %s' 

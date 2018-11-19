@@ -9,13 +9,14 @@ Created on Sat Dec 23 19:30:06 2017
 import sys
 sys.path.append('.')
 
-from pyDist import Interfaces, endpointSetup
+from pyDist import Interfaces, intercom
 import concurrent
 import logging
 import urllib.request
 import json
 import os
 import time
+import asyncio
 
 from pyDist.TaskManager import TaskManager
 import tests.testerHelpers as testHelpers
@@ -59,6 +60,12 @@ def start_one_node_and_connect_n_users(n):
     logger.debug('----- creating executor and sending tasks -----')
     connect_n_users(n)
 
+    io_loop = asyncio.get_event_loop()
+    counts = io_loop.run_until_complete(intercom.get_user_counts('0.0.0.0', 9000,
+                                                                 params={'user_id': 'connect_one_user(0)'}))
+
+    logger.debug(f'counts: {counts}')
+
     # shutdown the executor then kill all child processes
     logger.debug('Shutting down the test processes')
     task_manager.executor.shutdown(wait=False)
@@ -84,5 +91,5 @@ def test_start_one_node_and_connect_a_bunch_of_users():
 if __name__ == '__main__':
     logger.debug('basic task sending test')
     
-    #test_start_one_node_and_connect_one_user()
-    test_start_one_node_and_connect_a_bunch_of_users()
+    test_start_one_node_and_connect_one_user()
+    #test_start_one_node_and_connect_a_bunch_of_users()

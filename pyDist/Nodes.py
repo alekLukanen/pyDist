@@ -21,7 +21,7 @@ import logging
 import sys
 
 from pyDist import Interfaces, TaskManager,\
-    pickleFunctions, Tasks, endpointSetup, intercom
+    pickleFunctions, Tasks, endpointSetup, intercom, WorkItemOptimizer
 import pyDist.comms.ClusterExecutor
 
 logging.getLogger("aiohttp").setLevel(logging.WARNING)
@@ -35,12 +35,14 @@ class ClusterNodeV2(pyDist.comms.ClusterExecutor.Comm,
     def __init__(self):
         self.interface = Interfaces.NodeInterface()
         self.interfaces = Interfaces.InterfaceHolder()
+        self.work_item_optimizer = WorkItemOptimizer.WorkItemOptimizer(self.interfaces)
+
         self.server_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.server_loop)
         self.app = web.Application()
 
-        pyDist.comms.ClusterExecutor.Receive.__init__(self)
-        pyDist.comms.ClusterExecutor.Send.__init__(self)
+        pyDist.comms.ClusterExecutor.Comm.__init__(self)
+        pyDist.comms.WorkItems.Comm.__init__(self)
 
     def boot(self, ip, port):
         self.interface.ip = ip
@@ -78,7 +80,7 @@ class ClusterNode(object):
         self.taskManager.executor.shutdown(wait=False)
 
     ######################################
-        
+
     ###NODE INFO CODE ####################    
     def get_counts(self):
         num_cores = self.taskManager.num_cores

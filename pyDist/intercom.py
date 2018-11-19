@@ -78,6 +78,12 @@ async def get_counts(server_ip, server_port, params={}):
     return response
 
 
+async def get_user_counts(server_ip, server_port, params={}):
+    location = location_assembler(server_ip, server_port, "/userCounts")
+    response = await get_json_request(location, params=params)
+    return response
+
+
 async def get_node_info(server_ip, server_port, params={}):
     location = location_assembler(server_ip, server_port, "/nodeInfo")
     response = await get_json_request(location)

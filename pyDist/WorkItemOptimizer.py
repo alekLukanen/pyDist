@@ -1,10 +1,60 @@
 
-from pyDist import Interfaces
+import threading
 
-class WorkItemOptimizer(object):
+from pyDist import Interfaces, TaskManager
+from pyDist.comms.Logging import Log
+
+
+class WorkItemOptimizer(Log):
 
     def __init__(self, interface_holder: Interfaces.InterfaceHolder):
-        self.interface_holder = interface_holder
+        Log.__init__(self, __name__)
+        self.interfaces = interface_holder
+        self.task_manager = TaskManager.TaskManager()
+
+        self._condition = threading.Condition()  # makes the class thread-safe
+
+    def add_work_item(self, work_item, data):
+        """
+        Add a work item to the node. The inner data
+        of the work item should be pickled before being
+        passed to this method.
+        :param work_item:
+        :param data
+        :return: True or False for added
+        """
+        user = self.interfaces.find_user_by_user_id(data['user_id'])
+        if user:
+            user.add_received_work_item(work_item)
+        else:
+            self.logger.warning('THE USER DOES NOT EXIST, WORK ITEM NOT ADDED')
+        self.execute_work_item(work_item)
+        return True
+
+    def execute_work_item(self, work_item):
+        """
+        Find a work item and execute it.
+        Process -
+            (1) add work item to nodes task manager
+            (2) else send work item to another node
+        :param work_item:
+        :return: True or False for executed
+        """
+        pass
+
+    def work_item_finished_callback(self, future):
+        """
+        Method called when a work item finishes.
+        Process -
+            (1) unpickle inner data
+            (2) updated work item in user interface
+            (3) remove item from task list in task manager
+            (4) attempt to run another work item in the task manager
+            (5) perform error checking
+        :param future:
+        :return:
+        """
+        pass
 
     async def find_open_node(self):
         """
