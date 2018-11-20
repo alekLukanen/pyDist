@@ -106,7 +106,7 @@ class InterfaceHolder(object):
                 if user.interface_id == work_item.interface_id:
                     user.work_items_running.remove(work_item.item_id)
                     user.finished_work_item(work_item)
-                    self.logger.debug(f'job finished event: {test_nodeEndpoints.finished_event}')
+                    #self.logger.debug(f'job finished event: {test_nodeEndpoints.finished_event}')
                     self.remove_work_item_in_user_by_item_id(user, work_item.item_id)
                     return True
             return False
@@ -386,7 +386,7 @@ class ClusterExecutor(_base.Executor):
             try:
                 self._work_item_sent.wait()
                 with self._condition:
-                    self.logger.debug(f'*** self.tasks_received={self.tasks_received} ***')
+                    #self.logger.debug(f'*** self.tasks_received={self.tasks_received} ***')
                     if self.tasks_received == len(self.tasks_sent):
                         if self._closed.is_set():
                             break
@@ -402,9 +402,14 @@ class ClusterExecutor(_base.Executor):
                     break
             self.logger.debug('C ---> U task: %s' % work_item)
             if work_item.item_id in self.tasks_sent:
+                self.logger.debug('in if')
                 with self._condition:
+                    self.logger.debug('in condition')
                     self.tasks_sent[work_item.item_id].update(work_item)
+                    self.logger.debug('updated the work item')
                     self.tasks_received += 1
+            else:
+                self.logger.warning('NOT A WORK ITEM SENT BY THIS EXECUTOR')
         self.logger.debug('*** Ended the finished_task_thread')
 
     def event_loop_worker(self, loop):

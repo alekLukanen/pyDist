@@ -11,7 +11,7 @@ sys.path.append('.')
 
 import pyDist.endpointSetup
 
-print ('starting a ClusterExecutorNode...')
+print('starting a ClusterExecutorNode...')
 
 node = pyDist.endpointSetup.setup_cluster_node()
 node.boot('0.0.0.0', 9000)

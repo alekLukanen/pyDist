@@ -17,6 +17,10 @@ def setup_cluster_node():
     node.app.router.add_route('GET', '/interfaceStats', node.ce_stats)
     node.app.router.add_route('GET', '/userCounts', node.wi_get_user_counts)
 
+    # these are two different routs going to the same method
+    node.app.router.add_route('GET', '/getSingleWorkItem', node.wi_get_single_work_item)
+    node.app.router.add_route('GET', '/getSingleTask', node.wi_get_single_work_item)
+
     return node
 
 

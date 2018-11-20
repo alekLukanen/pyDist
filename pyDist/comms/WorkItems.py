@@ -1,9 +1,11 @@
 
 import json
 from aiohttp import web
+import asyncio
 
 from pyDist.comms.Logging import Log
 from pyDist import pickleFunctions
+
 
 # receiver of incoming connections
 class Receive(Log):
@@ -21,9 +23,41 @@ class Receive(Log):
         # always pickle inner work item data here
         work_item.pickleInnerData()
 
+        # check if the work item has already been check-in at a head node
+        if work_item.in_cluster_network():
+            self.logger.debug(f'work_item added to pass-through list: {work_item}')
+
         added = self.work_item_optimizer.add_work_item(work_item, data)
 
         data = json.dumps({'task_added': added})
+        return web.Response(body=data, headers={"Content-Type": "application/json"})
+
+    async def wi_get_single_work_item(self, request):
+        self.logger.debug('called get single work item')
+        params = request.rel_url.query
+
+        # if the user_id parameter is not in the params list then
+        # wait one second. This ensures that a single requester
+        # does not take up all of the bandwidth to THIS node.
+        if 'user_id' not in params:
+            await asyncio.sleep(1)
+            return json.dumps({'data': None, 'error': 'a user_id was not provided'})
+
+        user = self.interfaces.find_user_by_user_id(params['user_id'])
+        data = None
+        if user:
+            await self.server_loop.run_in_executor(None, self.interfaces.wait_for_first_finished_work_item_for_user, user)
+            work_item = self.interfaces.find_finished_work_item_for_user(user)
+            self.interfaces.reset_finished_event_for_user(user)
+            if work_item!=None:
+                dictionary = {'data': work_item.pickle()}
+                data = json.dumps(dictionary)
+            else:
+                self.logger.warning('the work item was of Nonetype')
+                data = json.dumps({'data': None, 'error': 'work item was none'})
+        else:
+            data = json.dumps({'data': None, 'error': 'no test_nodeEndpoints for that user_id'})
+
         return web.Response(body=data, headers={"Content-Type": "application/json"})
 
 

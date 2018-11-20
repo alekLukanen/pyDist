@@ -48,6 +48,18 @@ def connect_n_users_and_send_c_work_items(n, c):
     assert interface_stats['data']['num_clients'] == 0
 
     for cluster_ex in cluster_exs:
+        task_count_conf = 0
+        pi_est = 0.0
+        for task in [f for f in cluster_ex.as_completed()]:
+            task_count_conf += 1
+            pi_est += task.result()
+            logger.debug('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, RESULT: %s\x1b[0m' %
+                        (c, task_count_conf, task))
+
+        assert task_count_conf == c
+
+    time.sleep(1)
+    for cluster_ex in cluster_exs:
         cluster_ex.disconnect()
 
 
@@ -56,12 +68,12 @@ def start_one_node_and_connect_n_users_and_send_c_work_items(n,c):
     task_manager.num_cores = 2
     task_manager.executor = concurrent.futures.ProcessPoolExecutor(task_manager.num_cores)
 
-    task_manager.tasks.append(
-        task_manager.executor.submit(testHelpers.create_master_node, '0.0.0.0', 9000)
-    )
+    #task_manager.tasks.append(
+    #    task_manager.executor.submit(testHelpers.create_master_node, '0.0.0.0', 9000)
+    #)
 
     logger.debug('----- creating executor and sending tasks -----')
-    connect_n_users_and_send_c_work_items(n,c)
+    connect_n_users_and_send_c_work_items(n, c)
 
     # shutdown the executor then kill all child processes
     logger.debug('Shutting down the test processes')
@@ -70,7 +82,7 @@ def start_one_node_and_connect_n_users_and_send_c_work_items(n,c):
 
 
 def test_start_one_node_and_connect_one_user():
-    start_one_node_and_connect_n_users_and_send_c_work_items(1, 3)
+    start_one_node_and_connect_n_users_and_send_c_work_items(1, 15)
 
 
 if __name__=='__main__':

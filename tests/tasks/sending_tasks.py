@@ -47,8 +47,8 @@ def submit_test(tasks_needed):
     cluster.connect('submit_test')
     
     logger.debug('sending the task...')
-    #send a message to the node
-    for i in range(0,tasks_needed): #add three tasks
+    # send a message to the node
+    for i in range(0,tasks_needed): # add three tasks
         _ = cluster.submit(exSheet.estimatePi, 1_000_000)
 
     task_count_conf = 0

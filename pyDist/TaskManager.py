@@ -87,4 +87,3 @@ class TaskManager(object):
             return True
         else:
             return False
-    
