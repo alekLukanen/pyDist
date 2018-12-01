@@ -351,6 +351,7 @@ class ClusterExecutor(_base.Executor):
         return results
 
     def as_completed(self):
+        self.logger.debug(f'len(self.futures): {len(self.futures)}')
         return concurrent.futures.as_completed(self.futures)
         
     def shutdown(self, wait=True):
@@ -386,7 +387,6 @@ class ClusterExecutor(_base.Executor):
             try:
                 self._work_item_sent.wait()
                 with self._condition:
-                    #self.logger.debug(f'*** self.tasks_received={self.tasks_received} ***')
                     if self.tasks_received == len(self.tasks_sent):
                         if self._closed.is_set():
                             break
@@ -402,12 +402,13 @@ class ClusterExecutor(_base.Executor):
                     break
             self.logger.debug('C ---> U task: %s' % work_item)
             if work_item.item_id in self.tasks_sent:
-                self.logger.debug('in if')
+                #self.logger.debug('in if')
                 with self._condition:
-                    self.logger.debug('in condition')
+                    #self.logger.debug('in condition')
                     self.tasks_sent[work_item.item_id].update(work_item)
                     self.logger.debug('updated the work item')
                     self.tasks_received += 1
+                    self.logger.debug(f'*** self.tasks_received={self.tasks_received} ***')
             else:
                 self.logger.warning('NOT A WORK ITEM SENT BY THIS EXECUTOR')
         self.logger.debug('*** Ended the finished_task_thread')
