@@ -31,9 +31,9 @@ def connect_n_users_and_send_c_work_items(n, c):
 
     for cluster_ex in cluster_exs:
         for j in range(0, c):
-            _ = cluster_ex.submit(exSheet.estimatePi, 1_000_000)
+            _ = cluster_ex.submit(exSheet.estimatePi, 100_000)
 
-    time.sleep(1.5)
+    #time.sleep(5.0)
     for j in range(0, n):
         io_loop = asyncio.new_event_loop()
         counts = io_loop.run_until_complete(intercom.get_user_counts('0.0.0.0', 9000,
@@ -53,7 +53,7 @@ def connect_n_users_and_send_c_work_items(n, c):
         futures_list = []
         for f in cluster_ex.as_completed():
             futures_list.append(f)
-            logger.debug(f'len(futures_list): {len(futures_list)}')
+            #logger.debug(f'len(futures_list): {len(futures_list)}')
 
         for task in futures_list:
             task_count_conf += 1
@@ -86,9 +86,9 @@ def start_one_node_and_connect_n_users_and_send_c_work_items(n,c):
     testHelpers.kill_child_processes(os.getpid())
 
 
-def test_start_one_node_and_connect_one_user():
-    start_one_node_and_connect_n_users_and_send_c_work_items(1, 20)
+def test_start_one_node_and_connect_one_user_and_send_50_work_items():
+    start_one_node_and_connect_n_users_and_send_c_work_items(1, 50)
 
 
 if __name__=='__main__':
-    test_start_one_node_and_connect_one_user()
+    test_start_one_node_and_connect_one_user_and_send_50_work_items()

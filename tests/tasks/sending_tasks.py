@@ -99,7 +99,7 @@ def map_test(tasks_needed, chuncksize=1):
 if __name__ == '__main__':
     logger.debug('basic ClusterExecutor.py tests')
     
-    tasks_needed = 50
+    tasks_needed = 13
 
     start_submit_time = time.time()
     submit_test(tasks_needed)

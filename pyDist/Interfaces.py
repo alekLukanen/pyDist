@@ -351,7 +351,7 @@ class ClusterExecutor(_base.Executor):
         return results
 
     def as_completed(self):
-        self.logger.debug(f'len(self.futures): {len(self.futures)}')
+        #self.logger.debug(f'len(self.futures): {len(self.futures)}')
         return concurrent.futures.as_completed(self.futures)
         
     def shutdown(self, wait=True):
@@ -402,9 +402,11 @@ class ClusterExecutor(_base.Executor):
                     break
             self.logger.debug('C ---> U task: %s' % work_item)
             if work_item.item_id in self.tasks_sent:
-                #self.logger.debug('in if')
+                #self.logger.debug(f'has the work item been run: {self.tasks_sent[work_item.item_id].work_item.ran}')
+                if self.tasks_sent[work_item.item_id].work_item.ran:
+                    #self.logger.debug(f'<-*-> the work item has already been accepted try another')
+                    continue
                 with self._condition:
-                    #self.logger.debug('in condition')
                     self.tasks_sent[work_item.item_id].update(work_item)
                     self.logger.debug('updated the work item')
                     self.tasks_received += 1

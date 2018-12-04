@@ -31,11 +31,12 @@ class Task(object):
     
     def __init__(self, fn, args, kwargs):
         self.work_item = Items.WorkerItem(fn, args, kwargs) #cluster facing
-        self.future = concurrent.futures._base.Future() #test_nodeEndpoints facing
+        self.future = concurrent.futures._base.Future()     #test_nodeEndpoints facing
 
     def update(self, work_item):
         self.work_item = work_item
         self.future.set_result(self.work_item.result)
+        print(f'self.future.result: {self.future.done()}')
 
     def pickle(self):
         pickle = pickleFunctions.createPickleServer(self.work_item)
