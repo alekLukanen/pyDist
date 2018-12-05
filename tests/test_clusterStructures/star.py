@@ -72,7 +72,7 @@ def create_Nary_star(N, send_tasks=False):
         logger.debug('----- creating executor and sending tasks -----')
         cluster_ex = Interfaces.ClusterExecutor('0.0.0.0', 9000)
         cluster_ex.connect(f'create_Nary_star({N})', group_id='star_tests')
-        send_test_tasks_to_node(cluster_ex)
+        send_tasks_to_node(cluster_ex)
         cluster_ex.disconnect()
 
     logger.debug(f'os.getpid(): {os.getpid()}')
@@ -106,7 +106,7 @@ def test_ridiculous_star():
     create_Nary_star(10)
 
 
-def send_test_tasks_to_node(cluster_ex):
+def send_tasks_to_node(cluster_ex):
     logger.debug('send_test_tasks_to_node()')
 
     tasks_needed = 20

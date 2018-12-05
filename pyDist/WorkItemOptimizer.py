@@ -96,7 +96,6 @@ class WorkItemOptimizer(Log):
         if len(self.task_manager.tasks) < self.task_manager.num_cores:
             user, work_item = self.interfaces.find_user_work_item()
             if user and work_item:
-                self.logger.debug('No users have tasks to perform')
                 future = self.task_manager.executor.submit(Tasks.caller_helper, work_item)
                 future.add_done_callback(self.work_item_finished_callback)
                 self.task_manager.submit(future)
@@ -112,14 +111,19 @@ class WorkItemOptimizer(Log):
             self.logger.debug('work item was not run because cores are available')
             return False
 
-    async def find_open_node(self):
+    def disperse_work_item(self):
+        user, work_item = self.interfaces.find_user_work_item()
+        if user and work_item:
+            self.logger.debug(f'found a user and work item')
+
+    def find_open_node(self):
         """
         For all nodes in the interface holder find a node
         that has an open spot for a work item. That is, the node
         has an open core to execute a task.
         :return: a node interface or none
         """
-        await self.interfaces.update_node_interface_data()
+        self.interfaces.update_node_interface_data()
         for node_id in self.interfaces.node_interfaces:
             print('node_id: ', node_id)
             node_interface = self.interfaces.node_interfaces[node_id]
@@ -133,15 +137,15 @@ class WorkItemOptimizer(Log):
                 continue
         return None
 
-    async def send_work_item_to_node(self, work_item):
+    def send_work_item_to_node(self, work_item):
         """
         For a given work item attempt to send the item to an
         open node on the network of nodes.
         :param work_item: a work item on the current node
         :return: True or False
         """
-        node = await self.find_open_node()  # find an open node
+        node = self.find_open_node()  # find an open node
         if node:
-            await node.add_work_item(work_item)  # send work item to the node through its interface
+            node.add_work_item(work_item)  # send work item to the node through its interface
             return True
         return False

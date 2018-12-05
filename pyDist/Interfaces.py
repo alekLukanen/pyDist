@@ -246,7 +246,7 @@ class NodeInterface(object):
         self.num_queued = response['num_queued'] if 'num_queued' in response else None
         return response
     
-    def add_task(self, task):
+    def add_work_item(self, task):
         self.logger.debug('C <--- U task: %s' % task)
         response = self.event_loop.run_until_complete(intercom.post_work_item(self.ip, self.port
                                                                               , task, params=self.params))
@@ -292,7 +292,8 @@ class ClusterExecutor(_base.Executor):
         
     def connect(self, user_id, group_id='base'):
         response = self.event_loop.run_until_complete(intercom.connect_user(self.ip
-                                                                            , self.port, params={'user_id': user_id, 'group_id': group_id}))
+                                                                    , self.port, params={'user_id': user_id
+                                                                    , 'group_id': group_id}))
 
         if 'connected' in response and response['connected']:
             self.user_id = user_id
@@ -305,6 +306,10 @@ class ClusterExecutor(_base.Executor):
             return True
         else:
             return False
+
+    def shutdown_executor(self):
+        response = self.event_loop.run_until_complete(intercom.shutdown_executor(self.ip, self.port))
+        return response
 
     def disconnect(self):
         self._closed.set()

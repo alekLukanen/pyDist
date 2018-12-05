@@ -57,7 +57,7 @@ def start_one_node_and_connect_n_users(n):
         task_manager.executor.submit(testHelpers.create_master_node, '0.0.0.0', 9000)
     )
 
-    logger.debug('----- creating executor and sending tasks -----')
+    logger.debug('----- creating executor and connecting users -----')
     connect_n_users(n)
 
     io_loop = asyncio.get_event_loop()

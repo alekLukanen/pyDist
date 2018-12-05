@@ -44,7 +44,6 @@ class Receive(Log):
             return json.dumps({'data': None, 'error': 'a user_id was not provided'})
 
         user = self.interfaces.find_user_by_user_id(params['user_id'])
-        data = None
         if user:
             await self.server_loop.run_in_executor(None, self.interfaces.wait_for_first_finished_work_item_for_user, user)
             work_item = self.interfaces.find_finished_work_item_for_user(user)
@@ -60,6 +59,23 @@ class Receive(Log):
 
         return web.Response(body=data, headers={"Content-Type": "application/json"})
 
+    async def wi_shutdown_executor(self, request):
+        self.logger.debug('called get shutdown executor')
+        params = request.rel_url.query
+
+        if 'shutdown' in params:
+            data = params
+            if params['shutdown']:
+                self.logger.debug('shutting down the executor')
+                # shutdown executor here
+                self.shutdown_executor()
+                ########################
+            else:
+                self.logger.debug('not shutting down the executor')
+        else:
+            data = json.dumps({'data': None, 'error': 'shutdown parameter not included in request'})
+
+        return web.Response(body=data, headers={"Content-Type": "application/json"})
 
 # sender of outgoing communications (requests data from other sources)
 class Send(Log):

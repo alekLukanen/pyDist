@@ -40,7 +40,7 @@ async def get_json_request(location, params={}):
         return {}
 
 
-async def post_json_request(location, data, headers={"Content-Type":"application/json"}):
+async def post_json_request(location, data, headers={"Content-Type": "application/json"}):
     try:
         async with aiohttp.ClientSession() as session:
             try:
@@ -115,8 +115,13 @@ async def connect_user(server_ip, server_port, params={}):
 
 
 async def connect_node(node_ip, node_port, params={}):
-    print('connect_node using intercom')
     location = location_assembler(node_ip, node_port, "/connectNode")
+    response = await post_json_request(location, params)
+    return response
+
+
+async def shutdown_executor(node_ip, node_port, params={'shutdown': True}):
+    location = location_assembler(node_ip, node_port, "/shutdownExecutor")
     response = await post_json_request(location, params)
     return response
 

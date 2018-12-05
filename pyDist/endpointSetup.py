@@ -20,6 +20,7 @@ def setup_cluster_node():
     # these are two different routs going to the same method
     node.app.router.add_route('GET', '/getSingleWorkItem', node.wi_get_single_work_item)
     node.app.router.add_route('GET', '/getSingleTask', node.wi_get_single_work_item)
+    node.app.router.add_route('POST', '/shutdownExecutor', node.wi_shutdown_executor)
 
     return node
 

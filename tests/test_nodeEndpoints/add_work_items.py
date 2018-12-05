@@ -10,6 +10,7 @@ import json
 import os
 import time
 import asyncio
+import subprocess
 
 from pyDist.TaskManager import TaskManager
 import tests.testerHelpers as testHelpers
@@ -20,9 +21,12 @@ logging.getLogger("endpoints").setLevel(logging.WARNING)
 logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+logger.propagate = False
 
 
 def connect_n_users_and_send_c_work_items(n, c):
+    time.sleep(1)
+    logger.debug(f'called connect_n_users_and_send_c_work_items({n}, {c})')
     cluster_exs = []
     for i in range(0, n):
         cluster_ex = Interfaces.ClusterExecutor('0.0.0.0', 9000)
@@ -43,9 +47,9 @@ def connect_n_users_and_send_c_work_items(n, c):
 
     interface_stats = json.loads(urllib.request.urlopen("http://0.0.0.0:9000/interfaceStats").read())
     logger.debug(f'interface_stats: {str(interface_stats)}')
-    #assert interface_stats['data']['num_users'] == n
-    #assert interface_stats['data']['num_nodes'] == 0
-    #assert interface_stats['data']['num_clients'] == 0
+    assert interface_stats['data']['num_users'] == n
+    assert interface_stats['data']['num_nodes'] == 0
+    assert interface_stats['data']['num_clients'] == 0
 
     for cluster_ex in cluster_exs:
         task_count_conf = 0
@@ -53,7 +57,6 @@ def connect_n_users_and_send_c_work_items(n, c):
         futures_list = []
         for f in cluster_ex.as_completed():
             futures_list.append(f)
-            #logger.debug(f'len(futures_list): {len(futures_list)}')
 
         for task in futures_list:
             task_count_conf += 1
@@ -66,23 +69,20 @@ def connect_n_users_and_send_c_work_items(n, c):
     time.sleep(1)
     for cluster_ex in cluster_exs:
         cluster_ex.disconnect()
+        cluster_ex.shutdown_executor()
+        time.sleep(0.5)
 
 
 def start_one_node_and_connect_n_users_and_send_c_work_items(n,c):
-    task_manager = TaskManager()
-    task_manager.num_cores = 2
-    task_manager.executor = concurrent.futures.ProcessPoolExecutor(task_manager.num_cores)
 
-    #task_manager.tasks.append(
-    #    task_manager.executor.submit(testHelpers.create_master_node, '0.0.0.0', 9000)
-    #)
+    process = subprocess.Popen(["python", "tests/createSlaveNode.py"], stdout=subprocess.PIPE)
+    logger.debug(f'process-> {process}')
 
     logger.debug('----- creating executor and sending tasks -----')
     connect_n_users_and_send_c_work_items(n, c)
 
     # shutdown the executor then kill all child processes
-    logger.debug('Shutting down the test processes')
-    task_manager.executor.shutdown(wait=False)
+    logger.debug('Shutting down the node processes')
     testHelpers.kill_child_processes(os.getpid())
 
 

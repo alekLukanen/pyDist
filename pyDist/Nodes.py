@@ -19,6 +19,10 @@ import jinja2
 import json
 import logging
 import sys
+import os
+
+import signal
+import psutil
 
 from pyDist import Interfaces, TaskManager,\
     pickleFunctions, Tasks, endpointSetup, intercom, WorkItemOptimizer
@@ -77,7 +81,15 @@ class ClusterNode(object):
         
     ###USER INTERACTION CODE##############
     async def shutdown_executor(self):
+        self.logger.debug(f'called shutdown executor')
         self.taskManager.executor.shutdown(wait=False)
+        try:
+            parent = psutil.Process(os.getpid())
+        except psutil.NoSuchProcess:
+            return
+        children = parent.children(recursive=True)
+        for process in children:
+            process.send_signal(signal.SIGTERM)
 
     ######################################
 
