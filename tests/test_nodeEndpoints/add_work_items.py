@@ -21,7 +21,6 @@ logging.getLogger("endpoints").setLevel(logging.WARNING)
 logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-logger.propagate = False
 
 
 def connect_n_users_and_send_c_work_items(n, c):
@@ -86,8 +85,24 @@ def start_one_node_and_connect_n_users_and_send_c_work_items(n,c):
     testHelpers.kill_child_processes(os.getpid())
 
 
+def test_start_one_node_and_connect_one_user_and_send_0_work_items():
+    start_one_node_and_connect_n_users_and_send_c_work_items(1, 0)
+
+
+def test_start_one_node_and_connect_one_user_and_send_1_work_items():
+    start_one_node_and_connect_n_users_and_send_c_work_items(1, 1)
+
+
+def test_start_one_node_and_connect_one_user_and_send_3_work_items():
+    start_one_node_and_connect_n_users_and_send_c_work_items(1, 3)
+
+
 def test_start_one_node_and_connect_one_user_and_send_50_work_items():
     start_one_node_and_connect_n_users_and_send_c_work_items(1, 50)
+
+
+def test_start_one_node_and_connect_one_user_and_send_100_work_items():
+    start_one_node_and_connect_n_users_and_send_c_work_items(1, 100)
 
 
 if __name__=='__main__':
