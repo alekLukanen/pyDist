@@ -38,4 +38,12 @@ when the environment is no longer needed.
 Link to docs on Python virtual environments: 
 <https://packaging.python.org/guides/installing-using-pip-and-virtualenv/>.
 
-
+## Running Tests
+To run all tests on your local computer you can run the command
+```
+make test
+```
+from the base directory of the project. This will take up to 
+several minutes to run all tests. Each of these tests will create
+its own instance of the node server several times throughout the 
+testing process which is why the code takes so long to execute.
