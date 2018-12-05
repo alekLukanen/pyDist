@@ -23,7 +23,7 @@ logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(messa
 logger = logging.getLogger(__name__)
 
 # the number of samples used to compute pi in the tests;
-# this just changes how long the tests will take 
+# this just changes how long the tests will take
 # to complete.
 SAMPLES = 100
 

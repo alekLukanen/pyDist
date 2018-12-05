@@ -51,7 +51,8 @@ class WorkItemOptimizer(Log):
             self.logger.debug('added work item to running list')
             return True
         else:
-            self.logger.debug('work item not run')
+            self.logger.debug('attempt to execute a work item on another node')
+            
             return False
 
     def work_item_finished_callback(self, future):
