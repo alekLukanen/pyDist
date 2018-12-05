@@ -22,8 +22,12 @@ logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(messa
                 , stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# the number of samples used to compute pi in the tests;
+# this just changes how long the tests will take 
+# to complete.
+SAMPLES = 100
 
-def connect_n_users_and_send_c_work_items(n, c):
+def submit_helper(n, c):
     time.sleep(1)
     logger.debug(f'called connect_n_users_and_send_c_work_items({n}, {c})')
     cluster_exs = []
@@ -34,9 +38,8 @@ def connect_n_users_and_send_c_work_items(n, c):
 
     for cluster_ex in cluster_exs:
         for j in range(0, c):
-            _ = cluster_ex.submit(exSheet.estimatePi, 100_000)
+            _ = cluster_ex.submit(exSheet.estimatePi, SAMPLES)
 
-    #time.sleep(5.0)
     for j in range(0, n):
         io_loop = asyncio.new_event_loop()
         counts = io_loop.run_until_complete(intercom.get_user_counts('0.0.0.0', 9000,
@@ -44,11 +47,7 @@ def connect_n_users_and_send_c_work_items(n, c):
 
         logger.debug(f'counts: {counts}')
 
-    interface_stats = json.loads(urllib.request.urlopen("http://0.0.0.0:9000/interfaceStats").read())
-    logger.debug(f'interface_stats: {str(interface_stats)}')
-    assert interface_stats['data']['num_users'] == n
-    assert interface_stats['data']['num_nodes'] == 0
-    assert interface_stats['data']['num_clients'] == 0
+    check_num_stats(n)
 
     for cluster_ex in cluster_exs:
         task_count_conf = 0
@@ -72,13 +71,76 @@ def connect_n_users_and_send_c_work_items(n, c):
         time.sleep(0.5)
 
 
-def start_one_node_and_connect_n_users_and_send_c_work_items(n,c):
+def mapper_helper(n, c, b):
+    time.sleep(1)
+    logger.debug(f'called connect_n_users_and_map_c_work_items({n}, {c})')
+    cluster_exs = []
+    for i in range(0, n):
+        cluster_ex = Interfaces.ClusterExecutor('0.0.0.0', 9000)
+        cluster_ex.connect(f'connect_one_user({i})', group_id='connect_users')
+        cluster_exs.append(cluster_ex)
 
-    process = subprocess.Popen(["python", "tests/createSlaveNode.py"], stdout=subprocess.PIPE)
+    for cluster_ex in cluster_exs:
+        _ = cluster_ex.map(exSheet.estimatePi, [SAMPLES for _ in range(0, c)], chunksize=b)
+
+    for j in range(0, n):
+        io_loop = asyncio.new_event_loop()
+        counts = io_loop.run_until_complete(intercom.get_user_counts('0.0.0.0', 9000,
+                                params={'user_id': f'connect_one_user({j})'}))
+
+        logger.debug(f'counts: {counts}')
+
+    check_num_stats(n)
+
+    for cluster_ex in cluster_exs:
+        task_count_conf = 0
+        pi_est = 0.0
+        futures_list = []
+        for f in cluster_ex.as_completed():
+            futures_list.append(f)
+
+        for task in futures_list:
+            task_count_conf += len(task.result())
+            for est in task.result():
+                pi_est += est
+            logger.debug('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, RESULT: %s\x1b[0m' %
+                        (c, task_count_conf, task.result()))
+
+        assert task_count_conf == c
+
+    time.sleep(1)
+    for cluster_ex in cluster_exs:
+        cluster_ex.disconnect()
+        cluster_ex.shutdown_executor()
+        time.sleep(0.5)
+
+
+def check_num_stats(n):
+    interface_stats = json.loads(urllib.request.urlopen("http://0.0.0.0:9000/interfaceStats").read())
+    logger.debug(f'interface_stats: {str(interface_stats)}')
+    assert interface_stats['data']['num_users'] == n
+    assert interface_stats['data']['num_nodes'] == 0
+    assert interface_stats['data']['num_clients'] == 0
+
+
+def mapper(n,c, b):
+    process = subprocess.Popen(["python", "tests/createSlaveNode.py"], stdout=subprocess.DEVNULL)
     logger.debug(f'process-> {process}')
 
     logger.debug('----- creating executor and sending tasks -----')
-    connect_n_users_and_send_c_work_items(n, c)
+    mapper_helper(n, c, b)
+
+    # shutdown the executor then kill all child processes
+    logger.debug('Shutting down the node processes')
+    testHelpers.kill_child_processes(os.getpid())
+
+
+def submit(n,c):
+    process = subprocess.Popen(["python", "tests/createSlaveNode.py"], stdout=subprocess.DEVNULL)
+    logger.debug(f'process-> {process}')
+
+    logger.debug('----- creating executor and sending tasks -----')
+    submit_helper(n, c)
 
     # shutdown the executor then kill all child processes
     logger.debug('Shutting down the node processes')
@@ -86,24 +148,44 @@ def start_one_node_and_connect_n_users_and_send_c_work_items(n,c):
 
 
 def test_start_one_node_and_connect_one_user_and_send_0_work_items():
-    start_one_node_and_connect_n_users_and_send_c_work_items(1, 0)
+    submit(1, 0)
 
 
 def test_start_one_node_and_connect_one_user_and_send_1_work_items():
-    start_one_node_and_connect_n_users_and_send_c_work_items(1, 1)
+    submit(1, 1)
 
 
 def test_start_one_node_and_connect_one_user_and_send_3_work_items():
-    start_one_node_and_connect_n_users_and_send_c_work_items(1, 3)
+    submit(1, 3)
 
 
 def test_start_one_node_and_connect_one_user_and_send_50_work_items():
-    start_one_node_and_connect_n_users_and_send_c_work_items(1, 50)
+    submit(1, 50)
 
 
 def test_start_one_node_and_connect_one_user_and_send_100_work_items():
-    start_one_node_and_connect_n_users_and_send_c_work_items(1, 100)
+    submit(1, 100)
+
+
+def test_start_one_node_and_connect_one_user_and_map_12_tasks_with_chunk_size_1():
+    mapper(1, 12, 1)
+
+
+def test_start_one_node_and_connect_one_user_and_map_12_tasks_with_chunk_size_3():
+    mapper(1, 12, 3)
+
+
+def test_start_one_node_and_connect_one_user_and_map_12_tasks_with_chunk_size_6():
+    mapper(1, 12, 6)
+
+
+def test_start_one_node_and_connect_one_user_and_map_100_tasks_with_chunk_size_5():
+    mapper(1, 100, 5)
+
+
+def test_start_one_node_and_connect_one_user_and_map_100_tasks_with_chunk_size_25():
+    mapper(1, 100, 25)
 
 
 if __name__=='__main__':
-    test_start_one_node_and_connect_one_user_and_send_50_work_items()
+    test_start_one_node_and_connect_one_user_and_send_100_work_items()
