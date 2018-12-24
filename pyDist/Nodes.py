@@ -37,10 +37,10 @@ class ClusterNodeV2(pyDist.comms.ClusterExecutor.Comm,
                     pyDist.comms.WorkItems.Comm,
                     pyDist.comms.NodeToNode.Comm):
 
-    def __init__(self):
+    def __init__(self, num_cores):
         self.interface = Interfaces.NodeInterface()
         self.interfaces = Interfaces.InterfaceHolder()
-        self.work_item_optimizer = WorkItemOptimizer.WorkItemOptimizer(self.interfaces)
+        self.work_item_optimizer = WorkItemOptimizer.WorkItemOptimizer(self.interfaces, num_cores)
 
         self.io_loop = asyncio.new_event_loop()
         self.server_loop = asyncio.new_event_loop()

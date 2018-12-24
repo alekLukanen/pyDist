@@ -3,12 +3,13 @@
 from aiohttp import web
 import aiohttp_jinja2
 import jinja2
+import multiprocessing
 
 from pyDist import clusterEndpoints, webEndpoints, Nodes
 
 
-def setup_cluster_node():
-    node = Nodes.ClusterNodeV2()
+def setup_cluster_node(num_cores=multiprocessing.cpu_count()):
+    node = Nodes.ClusterNodeV2(num_cores=num_cores)
     node.app.router.add_route('POST', '/connectUser', node.ce_connect_user)
     node.app.router.add_route('POST', '/addWorkItem', node.wi_add_work_item)
 
@@ -16,6 +17,7 @@ def setup_cluster_node():
     node.app.router.add_route('GET', '/listOfUsers', node.ce_list_of_users)
     node.app.router.add_route('GET', '/interfaceStats', node.ce_stats)
     node.app.router.add_route('GET', '/userCounts', node.wi_get_user_counts)
+    node.app.router.add_route('GET', '/counts', node.wi_get_node_counts)
 
     # these are two different routs going to the same method
     node.app.router.add_route('GET', '/getSingleWorkItem', node.wi_get_single_work_item)

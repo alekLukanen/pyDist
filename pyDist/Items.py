@@ -1,6 +1,6 @@
 import uuid
 import asyncio
-from pyDist import pickleFunctions, intercom
+from pyDist import pickleFunctions, intercom, stateless_intercom
 
 
 class ClusterItem(object):
@@ -28,14 +28,13 @@ class ClusterItem(object):
         else:
             return None
 
-    def bounce_back(self, params):
+    def bounce_back(self, params={}):
         if self.returning:
             tracer = self.pop_tracer()
             if tracer:
                 #post_work_item(server_ip, server_port, task, params={})
                 io_loop = asyncio.new_event_loop()
-                response = io_loop.run_until_complete(
-                    intercom.post_work_item(tracer['ip'], tracer['port'], self, params=params))
+                response = stateless_intercom.post_work_item(tracer['ip'], tracer['port'], self, params=params)
                 if response['task_added']:
                     return True
                 else:

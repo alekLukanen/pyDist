@@ -81,6 +81,11 @@ def create_Nary_star(N, send_tasks=False):
     assert len(interfaces_from_9000['node_interfaces']) == N
 
 
+def test_unary_star_with_tasks():
+    logger.debug('unary star structure test with tasks')
+    create_Nary_star(1, send_tasks=True)
+
+
 def test_unary_star():
     logger.debug('unary star structure test')
     create_Nary_star(1)

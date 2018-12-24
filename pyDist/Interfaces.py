@@ -17,7 +17,7 @@ from concurrent.futures import _base
 from concurrent.futures import process
 from functools import partial
 
-from pyDist import intercom, Tasks
+from pyDist import intercom, stateless_intercom, Tasks
 
 
 class InterfaceHolder(object):
@@ -76,7 +76,7 @@ class InterfaceHolder(object):
         :return: None
         """
         for node_interface in self.node_interfaces:
-            node_interface.update_counts()  # updates: num cores, num running, num queued
+            self.node_interfaces[node_interface].update_counts()  # updates: num cores, num running, num queued
 
     def connect_user(self, user_data):
         with self._condition:
@@ -99,13 +99,24 @@ class InterfaceHolder(object):
                 work_item = user.work_items_received.pop()
                 return user, work_item
         return None, None
+
+    def find_network_work_item(self):
+        with self._condition:
+            if len(self.network_interface.work_items_received)>0:
+                work_item = self.network_interface.work_items_received.pop()
+                return self.network_interface, work_item
+            return None, None
     
     def update_work_item_in_user(self, work_item):
         with self._condition:
             for user_id in self.user_interfaces:
                 user = self.user_interfaces[user_id]
                 if user.interface_id == work_item.interface_id:
-                    user.work_items_running.remove(work_item.item_id)
+                    #if not work_item.returning:
+                    if work_item.item_id in user.work_items_running:
+                        user.work_items_running.remove(work_item.item_id)
+                    else:
+                        logging.warning(f'work item not in users running list')
                     user.finished_work_item(work_item)
                     #self.logger.debug(f'job finished event: {test_nodeEndpoints.finished_event}')
                     self.remove_work_item_in_user_by_item_id(user, work_item.item_id)
@@ -117,6 +128,7 @@ class InterfaceHolder(object):
             self.network_interface.work_items_running.remove(work_item.item_id)
             self.network_interface.finished_work_item(work_item)
             self.remove_work_item_in_user_by_item_id(self.network_interface, work_item.item_id)
+            self.logger.debug(f'network_interface: {self.network_interface}')
 
     def find_user_by_interface_id(self, interface_id):
         for user_id in self.user_interfaces:
@@ -213,6 +225,9 @@ class NetworkInterface(UserInterface):
         UserInterface.__init__(self, domain_id, network_id)
         self.is_network_interface = False
 
+    def add_received_work_item(self, work_item):
+        with self._condition:
+            self.work_items_received.append(work_item)
 
 class NodeInterface(object):
     
@@ -223,10 +238,10 @@ class NodeInterface(object):
         self.num_cores = None
         self.num_running = None            #for test_nodeEndpoints side only
         self.num_queued = None             #for test_nodeEndpoints side only
-        self.tasks_sent = {}               #for test_nodeEndpoints side only
+        self.work_items_sent = {}               #for test_nodeEndpoints side only
         self.params = {}
 
-        self.event_loop = asyncio.get_event_loop()
+        self.event_loop = asyncio.new_event_loop()
 
         logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                             , stream=sys.stdout, level=logging.DEBUG)
@@ -244,7 +259,9 @@ class NodeInterface(object):
                 , 'port': self.port}
 
     def update_counts(self):
-        response = self.event_loop.run_until_complete(intercom.get_counts(self.ip, self.port))
+        #response = self.event_loop.run_until_complete(intercom.get_counts(self.ip, self.port))
+        response = stateless_intercom.get_counts(self.ip, self.port)
+        self.logger.debug(f'response of update_count(): {response}')
         self.num_cores = response["num_cores"] if "num_cores" in response else 1
         self.num_running = response["num_tasks_running"] if "num_tasks_running" in response else 1
         self.num_queued = response["num_tasks_queued"] if "num_tasks_queued" in response else 1
@@ -260,12 +277,13 @@ class NodeInterface(object):
         self.num_queued = response['num_queued'] if 'num_queued' in response else None
         return response
     
-    def add_work_item(self, task):
-        self.logger.debug('C <--- U task: %s' % task)
-        response = self.event_loop.run_until_complete(intercom.post_work_item(self.ip, self.port
-                                                                              , task, params=self.params))
+    def add_work_item(self, work_item):
+        self.logger.debug('C <--- C work_item: %s' % work_item)
+        #response = self.event_loop.run_until_complete(intercom.post_work_item(self.ip, self.port
+        #                                                                      , task, params=self.params))
+        response = stateless_intercom.post_work_item(self.ip, self.port, work_item, params=self.params)
         if response['task_added']:
-            self.tasks_sent[task.task_id] = task
+            self.work_items_sent[work_item.item_id] = work_item
             return True
         else:
             return False

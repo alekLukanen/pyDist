@@ -21,13 +21,13 @@ class TaskManager(object):
     #   self.num_cores - the number of cores in the computer
     #   self.executor - the process pool executor used by the manager
     #   self.tasks - the tasks submitted to the executor
-    def __init__(self):
+    def __init__(self, num_cores=multiprocessing.cpu_count()):
         
         logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
         self.logger = logging.getLogger(__name__)
         
-        self.num_cores = multiprocessing.cpu_count()
+        self.num_cores = num_cores
         self.num_running = 0
         self.executor = concurrent.futures.ProcessPoolExecutor(self.num_cores)
         

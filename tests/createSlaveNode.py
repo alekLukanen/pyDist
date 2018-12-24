@@ -13,5 +13,5 @@ import pyDist.endpointSetup
 
 print('starting a ClusterExecutorNode...')
 
-node = pyDist.endpointSetup.setup_cluster_node()
+node = pyDist.endpointSetup.setup_cluster_node(num_cores=4)
 node.boot('0.0.0.0', 9000)

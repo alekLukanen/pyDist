@@ -28,10 +28,10 @@ class Receive(Log):
                 self.logger.debug('adding back to user interface for cluster interface pickup')
 
                 # always pickle inner work item data here
-                work_item.pickleInnerData()
+                # work_item.pickleInnerData()
 
-                t_updated = self.WorkItemOptimizer.interfaces.update_work_item_in_user(work_item)
-                t_added = self.WorkItemOptimizer.run_work_item_from_user()
+                t_updated = self.work_item_optimizer.interfaces.update_work_item_in_user(work_item)
+                t_added = self.work_item_optimizer.run_work_item_from_user()
 
                 if not t_updated:
                     self.logger.warning('A TASK FAILED TO UPDATE')
@@ -45,7 +45,7 @@ class Receive(Log):
             work_item.add_trace(self.interface.get_signature())  # sign the work item
 
             # always pickle inner work item data here
-            work_item.pickleInnerData()
+            # work_item.pickleInnerData()
 
             # check if the work item has already been check-in at a head node
             if work_item.in_cluster_network():
@@ -116,6 +116,17 @@ class Status(Log):
     def __init__(self):
         Log.__init__(self, __name__)
         self.logger.debug('Receive of WorkItems')
+
+    async def wi_get_node_counts(self, request):
+        self.logger.debug('called get node counts')
+        params = request.rel_url.query
+        num_cores = self.work_item_optimizer.task_manager.num_cores
+        num_running = len(self.work_item_optimizer.task_manager.tasks)
+        num_queued = len(self.work_item_optimizer.task_manager.queued_tasks)
+        counts = {'num_cores': num_cores, 'num_tasks_running': num_running,
+                  'num_tasks_queued': num_queued}
+        data = json.dumps({'data': counts})
+        return web.Response(body=data, headers={"Content-Type": "application/json"})
 
     async def wi_get_user_counts(self, request):
         self.logger.debug('called get user counts')

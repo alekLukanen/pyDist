@@ -8,10 +8,10 @@ import pyDist.Tasks as Tasks
 
 class WorkItemOptimizer(Log):
 
-    def __init__(self, interface_holder: Interfaces.InterfaceHolder):
+    def __init__(self, interface_holder: Interfaces.InterfaceHolder, num_cores):
         Log.__init__(self, __name__)
         self.interfaces = interface_holder
-        self.task_manager = TaskManager.TaskManager()
+        self.task_manager = TaskManager.TaskManager(num_cores=num_cores)
         self._condition = threading.Condition()  # makes the class thread-safe
 
     def add_work_item(self, work_item, data):
@@ -47,6 +47,7 @@ class WorkItemOptimizer(Log):
         :param user:
         :return: True or False for executed
         """
+        #work_item.pickleInnerData()
         if len(self.task_manager.tasks) < self.task_manager.num_cores:
             future = self.task_manager.executor.submit(Tasks.caller_helper, work_item)
             future.add_done_callback(self.work_item_finished_callback)
@@ -75,16 +76,25 @@ class WorkItemOptimizer(Log):
         # get the work item from future and unpickle the inside of the work item
         work_item = future.result()
         work_item.unpickleInnerData()
+        work_item.returning = True
 
         if work_item.in_cluster_network():
             self.logger.debug(f'the work item is from the network interface')
             self.interfaces.update_work_item_in_network(work_item)
             t_removed = self.task_manager.remove_work_item_from_task_list_by_id(work_item)
+            node_t_added = self.run_work_item_from_network()
+            t_added = self.run_work_item_from_user()
 
             if not t_removed:
                 self.logger.warning('A FUTURE FAILED TO BE REMOVED')
+            if not node_t_added:
+                self.logger.debug('NETWORK TASK NOT RUN FROM QUEUED TASKS')
+            if not t_added:
+                self.logger.debug('TASK NOT RUN FROM QUEUED TASKS')
 
-            work_item.pickleInnerData()
+            #work_item.pickleInnerData()
+            self.logger.debug(f'work_item: {work_item}')
+            self.logger.debug(f'tracer: {work_item.pop_tracer()}')
             bounced = work_item.bounce_back()
 
             if not bounced:
@@ -101,8 +111,7 @@ class WorkItemOptimizer(Log):
         # add a done result to the task
         # update the task in user_tasks with the result
         # remove the future from the task list, this keeps the futures list small
-        t_updated = self.interfaces.update_work_item_in_user(
-            work_item)  # self.taskManager.update_task_by_id(returned_task)
+        t_updated = self.interfaces.update_work_item_in_user(work_item)
         t_removed = self.task_manager.remove_work_item_from_task_list_by_id(work_item)
         t_added = self.run_work_item_from_user()
 
@@ -115,6 +124,24 @@ class WorkItemOptimizer(Log):
             self.logger.warning('A FUTURE FAILED TO BE REMOVED')
         if not t_added:
             self.logger.debug('TASK NOT RUN FROM QUEUED TASKS')
+
+    def run_work_item_from_network(self):
+        if len(self.task_manager.tasks) < self.task_manager.num_cores:
+            network, work_item = self.interfaces.find_network_work_item()
+            if network and work_item:
+                future = self.task_manager.executor.submit(Tasks.caller_helper, work_item)
+                future.add_done_callback(self.work_item_finished_callback)
+                self.task_manager.submit(future)
+                network.work_items_running.append(work_item.item_id)
+                self.logger.debug('added work item to running list')
+                return False
+            else:
+                return True
+        else:
+            ##SEND WORK ITEM TO ANOTHER NODE######
+            self.logger.debug('attempt to execute a work item on another node')
+            self.disperse_work_item()
+            #################################
 
     def run_work_item_from_user(self):
         if len(self.task_manager.tasks) < self.task_manager.num_cores:
@@ -135,17 +162,19 @@ class WorkItemOptimizer(Log):
             #################################
 
     def disperse_work_item(self):
-        user, work_item = self.interfaces.find_user_work_item()
-        if user and work_item:
-            sent = self.send_work_item_to_node(work_item)
-            if sent:
-                self.logger.debug('C <--- C work item: %s' % work_item)
-                user.work_items_running.append(work_item.item_id)
-                return True  # work item sent; open node found
+        node = self.find_open_node()  # find an open node
+        if node:
+            user, work_item = self.interfaces.find_user_work_item()
+            if user and work_item:
+                sent = self.send_work_item_to_node(node, work_item)
+                if sent:
+                    self.logger.debug('C <--- C work item: %s' % work_item)
+                    user.work_items_running.append(work_item.item_id)
+                    return True  # work item sent; open node found
+                else:
+                    return False  # work item not sent; open node not found
             else:
-                return False  # work item not sent; open node not found
-        else:
-            return False  # no work item and/or user
+                return False  # no work item and/or user
 
     def find_open_node(self):
         """
@@ -168,14 +197,14 @@ class WorkItemOptimizer(Log):
                 continue
         return None
 
-    def send_work_item_to_node(self, work_item):
+    def send_work_item_to_node(self, node, work_item):
         """
         For a given work item attempt to send the item to an
         open node on the network of nodes.
+        :param node: a node to send the work item to
         :param work_item: a work item on the current node
         :return: True or False
         """
-        node = self.find_open_node()  # find an open node
         if node:
             node.add_work_item(work_item)  # send work item to the node through its interface
             return True
