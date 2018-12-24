@@ -53,6 +53,43 @@ class ClusterNodeV2(pyDist.comms.ClusterExecutor.Comm,
         self.interface.port = port
         web.run_app(self.app, host=self.interface.ip, port=self.interface.port)
 
+    def get_address(self):
+        return "http://%s:%d" % (self.interface.ip, self.interface.port)
+
+    # NODE-TO-NODE COMMS###############
+    def connect_to_node(self, ip, port):
+        print('connect_to_node...')
+        self.logger.debug('CONNECTING NODE TO (ip: %s, port: %s)' % (ip, port))
+        self.logger.debug('self.io_loop: %s' % self.io_loop)
+        try:
+            response = self.io_loop.run_until_complete(intercom.connect_node(ip,
+                        port, params={
+                        'node_id': str(self.interface.node_id),
+                        'ip': self.interface.ip,
+                        'port': self.interface.port}))
+        except Exception as e:
+            print('exception: ', e)
+
+        print('response: ', response)
+        if 'connected' in response and response['connected']:
+            print('connected!')
+
+    ###################################
+
+    # USER INTERACTION CODE##############
+    async def shutdown_executor(self):
+        self.logger.debug(f'called shutdown executor')
+        self.taskManager.executor.shutdown(wait=False)
+        try:
+            parent = psutil.Process(os.getpid())
+        except psutil.NoSuchProcess:
+            return
+        children = parent.children(recursive=True)
+        for process in children:
+            process.send_signal(signal.SIGTERM)
+
+    ######################################
+
 
 class ClusterNode(object):
     

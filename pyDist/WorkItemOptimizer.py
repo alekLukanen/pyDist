@@ -12,7 +12,6 @@ class WorkItemOptimizer(Log):
         Log.__init__(self, __name__)
         self.interfaces = interface_holder
         self.task_manager = TaskManager.TaskManager()
-
         self._condition = threading.Condition()  # makes the class thread-safe
 
     def add_work_item(self, work_item, data):
@@ -31,6 +30,11 @@ class WorkItemOptimizer(Log):
         else:
             self.logger.warning('THE USER DOES NOT EXIST, WORK ITEM NOT ADDED')
             return False
+        return True
+
+    def add_network_item(self, work_item, data):
+        self.interfaces.network_interface.add_received_work_item(work_item)
+        self.execute_work_item(work_item, self.interfaces.network_interface)
         return True
 
     def execute_work_item(self, work_item, user):
@@ -52,7 +56,7 @@ class WorkItemOptimizer(Log):
             return True
         else:
             self.logger.debug('attempt to execute a work item on another node')
-            
+            self.disperse_work_item()
             return False
 
     def work_item_finished_callback(self, future):
@@ -71,6 +75,25 @@ class WorkItemOptimizer(Log):
         # get the work item from future and unpickle the inside of the work item
         work_item = future.result()
         work_item.unpickleInnerData()
+
+        if work_item.in_cluster_network():
+            self.logger.debug(f'the work item is from the network interface')
+            self.interfaces.update_work_item_in_network(work_item)
+            t_removed = self.task_manager.remove_work_item_from_task_list_by_id(work_item)
+
+            if not t_removed:
+                self.logger.warning('A FUTURE FAILED TO BE REMOVED')
+
+            work_item.pickleInnerData()
+            bounced = work_item.bounce_back()
+
+            if not bounced:
+                self.logger.warning('THE WORK ITEM WAS NOT BOUNCED BACK')
+
+            # at this point the work item should have been updated in the
+            # cluster network interface and sent back to the previous node
+            # in the work item's trace stack.
+            return
 
         # here is where the taskmanager is udated based on the
         # tasks finished callback.
@@ -107,15 +130,22 @@ class WorkItemOptimizer(Log):
                 return True
         else:
             ##SEND WORK ITEM TO ANOTHER NODE######
-
+            self.logger.debug('attempt to execute a work item on another node')
+            self.disperse_work_item()
             #################################
-            self.logger.debug('work item was not run because cores are available')
-            return False
 
     def disperse_work_item(self):
         user, work_item = self.interfaces.find_user_work_item()
         if user and work_item:
-            self.logger.debug(f'found a user and work item')
+            sent = self.send_work_item_to_node(work_item)
+            if sent:
+                self.logger.debug('C <--- C work item: %s' % work_item)
+                user.work_items_running.append(work_item.item_id)
+                return True  # work item sent; open node found
+            else:
+                return False  # work item not sent; open node not found
+        else:
+            return False  # no work item and/or user
 
     def find_open_node(self):
         """

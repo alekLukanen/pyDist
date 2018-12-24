@@ -18,19 +18,44 @@ class Receive(Log):
         self.logger.debug('called add_work_item')
         data = json.loads(await request.text())
         work_item = pickleFunctions.unPickleServer(data['data'])
-        work_item.add_trace(self.interface.get_signature())  # sign the work item
+        if work_item.returning:
+            if work_item.in_cluster_network():
+                # pass the work item along; this is a pass-through
+                self.logger.debug('bouncing back to next node in trace')
+                work_item.bounce_back()
+            else:
+                # try to add to user interfaces
+                self.logger.debug('adding back to user interface for cluster interface pickup')
 
-        # always pickle inner work item data here
-        work_item.pickleInnerData()
+                # always pickle inner work item data here
+                work_item.pickleInnerData()
 
-        # check if the work item has already been check-in at a head node
-        if work_item.in_cluster_network():
-            self.logger.debug(f'work_item added to pass-through list: {work_item}')
+                t_updated = self.WorkItemOptimizer.interfaces.update_work_item_in_user(work_item)
+                t_added = self.WorkItemOptimizer.run_work_item_from_user()
 
-        added = self.work_item_optimizer.add_work_item(work_item, data)
+                if not t_updated:
+                    self.logger.warning('A TASK FAILED TO UPDATE')
+                if not t_added:
+                    self.logger.debug('TASK NOT RUN FROM QUEUED TASKS')
 
-        data = json.dumps({'task_added': added})
-        return web.Response(body=data, headers={"Content-Type": "application/json"})
+            data = json.dumps({'task_added': True})
+            return web.Response(body=data, headers={"Content-Type": "application/json"})
+
+        else:
+            work_item.add_trace(self.interface.get_signature())  # sign the work item
+
+            # always pickle inner work item data here
+            work_item.pickleInnerData()
+
+            # check if the work item has already been check-in at a head node
+            if work_item.in_cluster_network():
+                self.logger.debug(f'work_item added to pass-through list: {work_item}')
+                added = self.work_item_optimizer.add_network_item(work_item, data)
+            else:
+                added = self.work_item_optimizer.add_work_item(work_item, data)
+
+            data = json.dumps({'task_added': added})
+            return web.Response(body=data, headers={"Content-Type": "application/json"})
 
     async def wi_get_single_work_item(self, request):
         self.logger.debug('called get single work item')

@@ -44,7 +44,6 @@ def submit_helper(n, c):
         io_loop = asyncio.new_event_loop()
         counts = io_loop.run_until_complete(intercom.get_user_counts('0.0.0.0', 9000,
                                 params={'user_id': f'connect_one_user({j})'}))
-
         logger.debug(f'counts: {counts}')
 
     check_num_stats(n)

@@ -1,5 +1,6 @@
 import uuid
-from pyDist import pickleFunctions
+import asyncio
+from pyDist import pickleFunctions, intercom
 
 
 class ClusterItem(object):
@@ -9,6 +10,7 @@ class ClusterItem(object):
         self.stored_cluster_trace = []
         self.item_id = uuid.uuid4()
         self.interface_id = None
+        self.returning = False
 
     def trace(self):
         return self.stored_cluster_trace
@@ -25,6 +27,23 @@ class ClusterItem(object):
             return self.cluster_trace.pop()
         else:
             return None
+
+    def bounce_back(self, params):
+        if self.returning:
+            tracer = self.pop_tracer()
+            if tracer:
+                #post_work_item(server_ip, server_port, task, params={})
+                io_loop = asyncio.new_event_loop()
+                response = io_loop.run_until_complete(
+                    intercom.post_work_item(tracer['ip'], tracer['port'], self, params=params))
+                if response['task_added']:
+                    return True
+                else:
+                    return False  # work item not added
+            else:
+                return False  # tracer is none; no tracer left
+        else:
+            return False  # the work item is not returning back to the original node
 
 
 class WorkerItem(ClusterItem):
@@ -46,6 +65,7 @@ class WorkerItem(ClusterItem):
 
     def set_ran(self):
         self.ran = True
+        self.returning = True
 
     def set_result(self, result):
         self.result = result
@@ -85,6 +105,9 @@ class WorkerItem(ClusterItem):
     def pickle(self):
         pickle = pickleFunctions.createPickleServer(self)
         return pickle
+
+    def createDictionary(self):
+        return {'data': self.pickle()}
 
     def __str__(self):
         return f'item_id: {self.item_id}, id(test_nodeEndpoints defined): {self.id}' \

@@ -14,7 +14,7 @@ To develop for pyDist you will need to first create a Python virtual
 environment that contains all the necessary dependencies required by
 the core code. Essentially this virtual environment includes a
 python installation that is separate from the default python 
-installation on your computer. 
+installation on your computer.
 
 To create the virtual environment you first need to
 change directory into the pyDist repository (not the pyDist package)

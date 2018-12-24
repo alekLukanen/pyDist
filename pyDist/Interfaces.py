@@ -27,6 +27,7 @@ class InterfaceHolder(object):
                 , stream=sys.stdout, level=logging.DEBUG)
         self.logger = logging.getLogger(__name__)
 
+        self.network_interface = NetworkInterface('nodeX', 'network')
         self.user_interfaces = {}
         self.node_interfaces = {}
         self.client_interfaces = []  # I think this is for the webpage stuff???
@@ -99,7 +100,7 @@ class InterfaceHolder(object):
                 return user, work_item
         return None, None
     
-    def update_work_item_in_user(self, work_item, ):
+    def update_work_item_in_user(self, work_item):
         with self._condition:
             for user_id in self.user_interfaces:
                 user = self.user_interfaces[user_id]
@@ -110,7 +111,13 @@ class InterfaceHolder(object):
                     self.remove_work_item_in_user_by_item_id(user, work_item.item_id)
                     return True
             return False
-    
+
+    def update_work_item_in_network(self, work_item):
+        with self._condition:
+            self.network_interface.work_items_running.remove(work_item.item_id)
+            self.network_interface.finished_work_item(work_item)
+            self.remove_work_item_in_user_by_item_id(self.network_interface, work_item.item_id)
+
     def find_user_by_interface_id(self, interface_id):
         for user_id in self.user_interfaces:
             user = self.user_interfaces[user_id]
@@ -198,7 +205,14 @@ class UserInterface(object):
     def __str__(self): 
         return ('user_id: %s, group_id: %s' 
                % (self.user_id, self.group_id))
-    
+
+
+class NetworkInterface(UserInterface):
+
+    def __init__(self, domain_id, network_id):
+        UserInterface.__init__(self, domain_id, network_id)
+        self.is_network_interface = False
+
 
 class NodeInterface(object):
     
@@ -250,7 +264,7 @@ class NodeInterface(object):
         self.logger.debug('C <--- U task: %s' % task)
         response = self.event_loop.run_until_complete(intercom.post_work_item(self.ip, self.port
                                                                               , task, params=self.params))
-        if (response['task_added']==True):
+        if response['task_added']:
             self.tasks_sent[task.task_id] = task
             return True
         else:
