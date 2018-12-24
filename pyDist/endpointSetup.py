@@ -22,6 +22,9 @@ def setup_cluster_node():
     node.app.router.add_route('GET', '/getSingleTask', node.wi_get_single_work_item)
     node.app.router.add_route('POST', '/shutdownExecutor', node.wi_shutdown_executor)
 
+    node.app.router.add_route('POST', '/connectNode', node.ntn_connect_node)
+    node.app.router.add_route('GET', '/getInterfaceHolderInterfaces', node.ce_interface_holder_interfaces)
+
     return node
 
 

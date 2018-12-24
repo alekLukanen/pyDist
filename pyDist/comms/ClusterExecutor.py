@@ -32,7 +32,7 @@ class Status(Log):
 
     def __init__(self):
         Log.__init__(self, __name__)
-        self.logger.debug('Receive of ClusterExecutor')
+        self.logger.debug('Status of ClusterExecutor')
 
     async def ce_index(self, request):
         self.logger.debug('/')
@@ -50,6 +50,13 @@ class Status(Log):
         self.logger.debug(f'self: {self}')
         self.logger.debug(f'self.interfaces: {self.interfaces}')
         data = json.dumps({'data': self.interfaces.get_interfaces_as_dict()})
+        return web.Response(body=data, headers={"Content-Type": "application/json"})
+
+    async def ce_interface_holder_interfaces(self, request):
+        self.logger.debug('called ce_interface_holder_interfaces')
+        params = request.rel_url.query
+        data_inner = self.interfaces.get_interfaces_as_dict()
+        data = json.dumps({'data': data_inner})
         return web.Response(body=data, headers={"Content-Type": "application/json"})
 
 

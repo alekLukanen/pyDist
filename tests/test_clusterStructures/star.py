@@ -9,7 +9,7 @@ import logging
 
 sys.path.append('.')  # add calling directory to the path
 
-from pyDist import Nodes, intercom, Interfaces, exSheet
+from pyDist import Nodes, intercom, Interfaces, exSheet, endpointSetup
 from pyDist.TaskManager import TaskManager
 from tests.testerHelpers import kill_child_processes
 from tests import prettyPrinter as pp
@@ -22,19 +22,15 @@ logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(messa
 logger = logging.getLogger(__name__)
 
 
-
 def create_master_node(ip, port):
-    node = Nodes.ClusterNode()
+    node = endpointSetup.setup_cluster_node()
     node.boot(ip, port)
 
 
 def create_slave_node(ip, port, connection_ip, connection_port):
-    node = Nodes.ClusterNode()
-    node.interface.ip = ip
-    node.interface.port = port
-
+    node = endpointSetup.setup_cluster_node()
+    node.set_ip_and_port(ip, port)
     node.connect_to_node(connection_ip, connection_port)
-
     node.boot(ip, port)
 
 
@@ -47,7 +43,7 @@ def create_Nary_star(N, send_tasks=False):
         task_manager.executor.submit(create_master_node, '0.0.0.0', 9000)
     )
 
-    time.sleep(0.5)
+    time.sleep(1.0)
 
     for i in range(0, N):
         task_manager.tasks.append(
@@ -56,7 +52,7 @@ def create_Nary_star(N, send_tasks=False):
 
     io_loop = asyncio.get_event_loop()
 
-    time.sleep(1.0)  # have to wait for the node connection to register on the master/server node
+    time.sleep(2.0)  # have to wait for the node connection to register on the master/server node
 
     interfaces_from_9000 = io_loop.run_until_complete(intercom.get_interface_holder_interfaces('0.0.0.0', 9000))
     #interfaces_from_9001 = io_loop.run_until_complete(intercom.get_interface_holder_interfaces('0.0.0.0', 9001))

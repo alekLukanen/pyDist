@@ -36,7 +36,7 @@ class InterfaceHolder(object):
 
     def get_interfaces_as_dict(self):
         interface_dict = {'user_interfaces': [],
-                'node_interfaces': []}
+                          'node_interfaces': []}
 
         for key in self.user_interfaces:
             interface_dict['user_interfaces'].append(str(self.user_interfaces[key]))
