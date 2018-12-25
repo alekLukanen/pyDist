@@ -6,6 +6,7 @@ import concurrent.futures
 import asyncio
 import os
 import logging
+import subprocess
 
 sys.path.append('.')  # add calling directory to the path
 
@@ -20,6 +21,15 @@ logging.getLogger("endpoints").setLevel(logging.WARNING)
 logging.basicConfig(format='%(name)-12s:%(lineno)-3s | %(levelname)-8s | %(message)s'
                 , stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+
+def popen_node(ip, port, connections):
+    command = ['python', 'tests/spawn.py', ip, str(port)]
+    for connection in connections:
+        command.append(connection[0])
+        command.append(str(connection[1]))
+    process = subprocess.Popen(command, stdout=subprocess.DEVNULL)
+    logger.debug(f'process -> {process}')
 
 
 def create_master_node(ip, port):
@@ -81,9 +91,9 @@ def create_Nary_star(N, send_tasks=False):
     assert len(interfaces_from_9000['node_interfaces']) == N
 
 
-def test_unary_star_with_tasks():
-    logger.debug('unary star structure test with tasks')
-    create_Nary_star(1, send_tasks=True)
+#def test_unary_star_with_tasks():
+#    logger.debug('unary star structure test with tasks')
+#    create_Nary_star(1, send_tasks=True)
 
 
 def test_unary_star():
@@ -133,5 +143,7 @@ def send_tasks_to_node(cluster_ex):
 
 
 if __name__ == '__main__':
-    test_unary_star()
+    #test_unary_star()
+    popen_node('0.0.0.0', 9000, [('0.0.0.0', 9001), ('0.0.0.0', 9002)])
+    kill_child_processes(os.getpid())
     logger.debug(f'--- end of main file ---')
