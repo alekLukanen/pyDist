@@ -28,12 +28,12 @@ logger = logging.getLogger(__name__)
 SAMPLES = 100
 
 
-def submit_helper(n, c):
+def submit_helper(n, c, ip='0.0.0.0', port=9000):
     time.sleep(1)
     logger.debug(f'called connect_n_users_and_send_c_work_items({n}, {c})')
     cluster_exs = []
     for i in range(0, n):
-        cluster_ex = Interfaces.ClusterExecutor('0.0.0.0', 9000)
+        cluster_ex = Interfaces.ClusterExecutor(ip, port)
         cluster_ex.connect(f'connect_one_user({i})', group_id='connect_users')
         cluster_exs.append(cluster_ex)
 
@@ -43,11 +43,11 @@ def submit_helper(n, c):
 
     for j in range(0, n):
         io_loop = asyncio.new_event_loop()
-        counts = io_loop.run_until_complete(intercom.get_user_counts('0.0.0.0', 9000,
+        counts = io_loop.run_until_complete(intercom.get_user_counts(ip, port,
                                 params={'user_id': f'connect_one_user({j})'}))
         logger.debug(f'counts: {counts}')
 
-    check_num_stats(n)
+    check_num_stats(n, ip=ip, port=port)
 
     for cluster_ex in cluster_exs:
         task_count_conf = 0
@@ -62,6 +62,9 @@ def submit_helper(n, c):
             logger.debug('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, RESULT: %s\x1b[0m' %
                         (c, task_count_conf, task))
 
+        if task_count_conf != 0:
+            logger.debug(f'\x1b[31mEstimate of pi: {pi_est/task_count_conf}\x1b[0m')
+
         assert task_count_conf == c
 
     time.sleep(1)
@@ -71,12 +74,12 @@ def submit_helper(n, c):
         time.sleep(0.5)
 
 
-def mapper_helper(n, c, b):
+def mapper_helper(n, c, b, ip='0.0.0.0', port=9000):
     time.sleep(1)
     logger.debug(f'called connect_n_users_and_map_c_work_items({n}, {c})')
     cluster_exs = []
     for i in range(0, n):
-        cluster_ex = Interfaces.ClusterExecutor('0.0.0.0', 9000)
+        cluster_ex = Interfaces.ClusterExecutor(ip, port)
         cluster_ex.connect(f'connect_one_user({i})', group_id='connect_users')
         cluster_exs.append(cluster_ex)
 
@@ -85,12 +88,12 @@ def mapper_helper(n, c, b):
 
     for j in range(0, n):
         io_loop = asyncio.new_event_loop()
-        counts = io_loop.run_until_complete(intercom.get_user_counts('0.0.0.0', 9000,
+        counts = io_loop.run_until_complete(intercom.get_user_counts(ip, port,
                                 params={'user_id': f'connect_one_user({j})'}))
 
         logger.debug(f'counts: {counts}')
 
-    check_num_stats(n)
+    check_num_stats(n, ip=ip, port=port)
 
     for cluster_ex in cluster_exs:
         task_count_conf = 0
@@ -106,6 +109,9 @@ def mapper_helper(n, c, b):
             logger.debug('\x1b[31mTASKS NEEDED: %d, TASKS RETURNED: %d, RESULT: %s\x1b[0m' %
                         (c, task_count_conf, task.result()))
 
+        if task_count_conf != 0:
+            logger.debug(f'\x1b[31mEstimate of pi: {pi_est/task_count_conf}\x1b[0m')
+
         assert task_count_conf == c
 
     time.sleep(1)
@@ -115,8 +121,8 @@ def mapper_helper(n, c, b):
         time.sleep(0.5)
 
 
-def check_num_stats(n):
-    interface_stats = json.loads(urllib.request.urlopen("http://0.0.0.0:9000/interfaceStats").read())
+def check_num_stats(n, ip='0.0.0.0', port=9000):
+    interface_stats = json.loads(urllib.request.urlopen(f"http://{ip}:{port}/interfaceStats").read())
     logger.debug(f'interface_stats: {str(interface_stats)}')
     assert interface_stats['data']['num_users'] == n
     #assert interface_stats['data']['num_nodes'] == 0
@@ -124,7 +130,7 @@ def check_num_stats(n):
 
 
 def mapper(n,c, b):
-    process = subprocess.Popen(["python", "tests/createSlaveNode.py"], stdout=subprocess.DEVNULL)
+    process = subprocess.Popen(["python", "tests/spawn.py", "0.0.0.0", "9000"], stdout=subprocess.DEVNULL)
     logger.debug(f'process-> {process}')
 
     logger.debug('----- creating executor and sending tasks -----')
@@ -136,7 +142,7 @@ def mapper(n,c, b):
 
 
 def submit(n,c):
-    process = subprocess.Popen(["python", "tests/createSlaveNode.py"], stdout=subprocess.DEVNULL)
+    process = subprocess.Popen(["python", "tests/createSlaveNode.py", "0.0.0.0", "9000"], stdout=subprocess.DEVNULL)
     logger.debug(f'process-> {process}')
 
     logger.debug('----- creating executor and sending tasks -----')
