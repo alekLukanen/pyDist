@@ -45,7 +45,7 @@ will only work with the current computer you are working on. All you
 will need to know is your computers ip address given out by your 
 router. It is very important that you use `192.168.0.XXX` for example
 instead of `127.0.0.1` because when you decide to connect other computers
-together you will need to know the ip address given out the by 
+together you will need to know the ip address given out by your
 router anyways. 
 
 From the base directory of this repo call
@@ -68,6 +68,14 @@ python tests/sendTasks.py 192.168.0.XXX 9000
 Notice that this script is connecting to the head node not the child
 node. If all is working well you should start to see output in all 
 three terminal windows.
+
+One quick note: you can connect both of these nodes to each other, but
+at this point that functionality would lead to issues when tasks are sent
+to either node. The tasks would bounch back and forth between the two nodes
+causing a slowdown in the network. This is because tasks can move anywhere in
+the network an infinite number of times. A hop count is needed to fix this (
+similar to a ip packet's hop count limit). For now restrict your network
+structures to something resembling a tree.
 
 
 ## Running Tests
