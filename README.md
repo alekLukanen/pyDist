@@ -38,6 +38,38 @@ when the environment is no longer needed.
 Link to docs on Python virtual environments: 
 <https://packaging.python.org/guides/installing-using-pip-and-virtualenv/>.
 
+## Setup a Simple Cluster
+To setup a very basic cluster we will simply start two nodes on
+this machine. So instead of working with multiple computers we 
+will only work with the current computer you are working on. All you
+will need to know is your computers ip address given out by your 
+router. It is very important that you use `192.168.0.XXX` for example
+instead of `127.0.0.1` because when you decide to connect other computers
+together you will need to know the ip address given out the by 
+router anyways. 
+
+From the base directory of this repo call
+```
+python tests/spawn.py 4 192.168.0.XXX 9000
+```
+This line of code will start a master node at port 9000 on your computer.
+The next line of code will setup another node on your computer, but
+this time the node will connect to the master node. You will need to 
+run the next command in another terminal
+```
+python tests/spawn.py 4 192.168.0.XXX 9001 192.168.0.XXX 9000
+```
+At this point we have a master node with a child node connected to it. 
+And to test the network we call an example script in another terminal window
+which sends a few tasks to the network for execution
+```
+python tests/sendTasks.py 192.168.0.XXX 9000
+```
+Notice that this script is connecting to the head node not the child
+node. If all is working well you should start to see output in all 
+three terminal windows.
+
+
 ## Running Tests
 To run all tests on your local computer you can run the command
 ```
