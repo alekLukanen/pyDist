@@ -129,8 +129,8 @@ def check_num_stats(n, ip='0.0.0.0', port=9000):
     #assert interface_stats['data']['num_clients'] == 0
 
 
-def mapper(n,c, b):
-    process = subprocess.Popen(["python", "tests/spawn.py", "0.0.0.0", "9000"], stdout=subprocess.DEVNULL)
+def mapper(n, c, b):
+    process = subprocess.Popen(["python", "tests/spawn.py", "4", "0.0.0.0", "9000"], stdout=subprocess.DEVNULL)
     logger.debug(f'process-> {process}')
 
     logger.debug('----- creating executor and sending tasks -----')
