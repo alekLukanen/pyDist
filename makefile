@@ -11,7 +11,7 @@ build_env:
 	@echo "\033[92m-* Installing the virtualenv package using pip\033[0m"
 	python3 -m pip install --user virtualenv
 	@echo "\033[92m-* Creating the distEnv virtual environment for development\033[0m"
-	python3 -m virtualenv distEnv
+	python3 -m virtualenv -p python3.6 distEnv
 	@echo "\033[92m-* Installing dependencies\033[0m"
 	bash shellScripts/install_requirements.sh
 	@echo "\033[92m-* The development environment has been setup\033[0m"
