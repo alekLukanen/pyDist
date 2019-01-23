@@ -8,7 +8,12 @@ passed as messages. The ultimate goal is to allow seamless
 integration with Python3's Futures standard. This way users
 who are unfamiliar with parallel computing can still write
 code to be run on a large scale.
- 
+
+```diff
+- Only tested on Linux with python 3.6! I know it doesn't
+- work on MAC so don't even try it :)
+``` 
+
 ## Setting up Your Virtual Environment
 To develop for pyDist you will need to first create a Python virtual
 environment that contains all the necessary dependencies required by
