@@ -7,6 +7,9 @@
 pip_install:
 	sudo apt-get install python3-pip
 
+update_pyDist:
+	git pull
+
 build_env:
 	@echo "\033[92m-* Installing the virtualenv package using pip\033[0m"
 	python3 -m pip install --user virtualenv
