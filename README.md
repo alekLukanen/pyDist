@@ -14,6 +14,11 @@ code to be run on a large scale.
 - work on MAC so don't even try it :)
 ``` 
 
+## TODO
+* A user should be able to specify a code directory that will be
+saved on all nodes in the network. This will allow users to execute
+more complicated functions other than those defined in `__main__`.
+
 ## Setting up Your Virtual Environment
 To develop for pyDist you will need to first create a Python virtual
 environment that contains all the necessary dependencies required by
