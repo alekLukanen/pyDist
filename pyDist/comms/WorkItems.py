@@ -28,7 +28,7 @@ class Receive(Log):
                 self.logger.debug('adding back to user interface for cluster interface pickup')
 
                 # always pickle inner work item data here
-                # work_item.pickleInnerData()
+                work_item.pickleInnerData()
 
                 t_updated = self.work_item_optimizer.interfaces.update_work_item_in_user(work_item)
                 t_added = self.work_item_optimizer.run_work_item_from_user()
@@ -45,7 +45,7 @@ class Receive(Log):
             work_item.add_trace(self.interface.get_signature())  # sign the work item
 
             # always pickle inner work item data here
-            # work_item.pickleInnerData()
+            work_item.pickleInnerData()
 
             # check if the work item has already been check-in at a head node
             if work_item.in_cluster_network():

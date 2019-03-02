@@ -433,6 +433,7 @@ class ClusterExecutor(_base.Executor):
                 if self._closed.is_set():
                     break
                 work_item = await intercom.get_single_task(self.ip, self.port, params=self.params)
+                work_item.unpickleInnerData()
             except RuntimeError as e:
                 self.logger.error('Error in finished work item process')
                 if self._closed.is_set():

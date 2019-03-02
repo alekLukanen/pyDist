@@ -80,9 +80,9 @@ class WorkerItem(ClusterItem):
             self.fn = self.pickleVariable(self.fn)
             self.args = self.pickleVariable(self.args)
             self.kwargs = self.pickleVariable(self.kwargs)
-            self.flag = self.pickleVariable(self.flag)
-            self.id = self.pickleVariable(self.id)
-            self.ran = self.pickleVariable(self.ran)
+            #self.flag = self.pickleVariable(self.flag)
+            #self.id = self.pickleVariable(self.id)
+            #self.ran = self.pickleVariable(self.ran)
             self.result = self.pickleVariable(self.result)
             self._done_callbacks = self.pickleVariable(self._done_callbacks)
 
@@ -93,15 +93,16 @@ class WorkerItem(ClusterItem):
             self.fn = self.unpickleVariable(self.fn)
             self.args = self.unpickleVariable(self.args)
             self.kwargs = self.unpickleVariable(self.kwargs)
-            self.flag = self.unpickleVariable(self.flag)
-            self.id = self.unpickleVariable(self.id)
-            self.ran = self.unpickleVariable(self.ran)
+            #self.flag = self.unpickleVariable(self.flag)
+            #self.id = self.unpickleVariable(self.id)
+            #self.ran = self.unpickleVariable(self.ran)
             self.result = self.unpickleVariable(self.result)
             self._done_callbacks = self.unpickleVariable(self._done_callbacks)
 
             self._pickled_inner = False
 
     def pickle(self):
+        self.pickleInnerData()
         pickle = pickleFunctions.createPickleServer(self)
         return pickle
 
