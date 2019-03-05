@@ -97,3 +97,10 @@ from the base directory of the project. This will take up to
 several minutes to run all tests. Each of these tests will create
 its own instance of the node server several times throughout the 
 testing process which is why the code takes so long to execute.
+
+## Known Issues
+
+* The python package psutil requires that python header files be installed
+on your computer. So you need to run `sudo apt-get install python-dev` to install
+these header files. Then you can run the make command to build your environment
+again.
