@@ -390,6 +390,9 @@ class ClusterExecutor(_base.Executor):
     def as_completed(self):
         #self.logger.debug(f'len(self.futures): {len(self.futures)}')
         return concurrent.futures.as_completed(self.futures)
+
+    def clear_futures(self):
+        self.futures = []
         
     def shutdown(self, wait=True):
         self.logger.debug('shutdown()')
