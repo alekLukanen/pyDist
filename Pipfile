@@ -22,7 +22,7 @@ yarl = "==1.2.6"
 aiohttp_jinja2 = "==1.1.0"
 async_timeout = "==3.0.1"
 idna_ssl = "==1.1.0"
-Jinja2 = "==2.10"
+Jinja2 = "==2.11.3"
 MarkupSafe = "==1.1.0"
 
 [requires]
